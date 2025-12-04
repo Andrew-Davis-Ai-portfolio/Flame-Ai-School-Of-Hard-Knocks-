@@ -327,44 +327,41 @@ if (!hasTtsSupport) {
   }
 
   function playPassMessage() {
-    if (!hasTtsSupport || !currentCertData) return;
+  if (!currentCertData) return;
 
-    // Stop any ongoing speech
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-
-    const { studentName, lessonName } = currentCertData;
-
-    let message;
-    if (currentInstructor === "systems") {
-      message =
-        `System certified provisionally. ${studentName}, your lesson "${lessonName}" has passed the initial systems review. ` +
-        "Your structure, wiring, and description meet the baseline for this stage. " +
-        "Click the Notify Instructor button to send your work for review by Flame Division.";
-    } else {
-      message =
-        `Ethics criteria provisionally met. ${studentName}, your lesson "${lessonName}" aligns with responsible AI standards at this stage. ` +
-        "Remember that ethics is an ongoing practice, not a one-time pass. " +
-        "Click Notify Instructor to send your system for human approval.";
-    }
-
-    const utterance = new SpeechSynthesisUtterance(message);
-
-    // Choose a neutral voice if possible
-    const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length > 0) {
-      const preferred = voices.find((v) =>
-        /en/i.test(v.lang || "")
-      );
-      utterance.voice = preferred || voices[0];
-    }
-
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-
-    window.speechSynthesis.speak(utterance);
+  const synth = window.speechSynthesis;
+  if (!synth) {
+    ttsUnsupported.classList.remove("is-hidden");
+    return;
   }
+
+  // Stop any ongoing speech
+  if (synth.speaking) {
+    synth.cancel();
+  }
+
+  const { studentName, lessonName } = currentCertData;
+
+  let message;
+  if (currentInstructor === "systems") {
+    message =
+      `System certified provisionally. ${studentName}, your lesson "${lessonName}" has passed the initial systems review. ` +
+      "Your structure, wiring, and description meet the baseline for this stage. " +
+      "Click the Notify Instructor button to send your work for review by Flame Division.";
+  } else {
+    message =
+      `Ethics criteria provisionally met. ${studentName}, your lesson "${lessonName}" aligns with responsible AI standards at this stage. ` +
+      "Remember that ethics is an ongoing practice, not a one-time pass. " +
+      "Click Notify Instructor to send your system for human approval.";
+  }
+
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+
+  // Don’t pick a specific voice — some browsers get weird here
+  synth.speak(utterance);
+}
 
   // -----------------------
   // EVENT LISTENERS
