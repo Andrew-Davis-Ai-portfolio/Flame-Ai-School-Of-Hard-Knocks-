@@ -1,18 +1,35 @@
 // Flame Division Academy — Tutor AI Instructor Engine
 // app.js — client-side logic, evaluation, TTS, certificate generation
 
-(function () {
+document.addEventListener("DOMContentLoaded", function () {
   let appError = false;
+
   try {
     const state = {
       currentInstructor: "systems",
       lastResult: null,
       lastCertificate: null,
       tts: {
-        synth: window.speechSynthesis || null,
+        synth: "speechSynthesis" in window ? window.speechSynthesis : null,
         currentUtterance: null,
       },
     };
+
+    // Attempt to warm up voices (helps some browsers, especially iOS/Safari)
+    if (state.tts.synth) {
+      try {
+        state.tts.synth.getVoices();
+        window.speechSynthesis.onvoiceschanged =
+          window.speechSynthesis.onvoiceschanged ||
+          function () {
+            // no-op, just to ensure voices load
+          };
+      } catch (e) {
+        console.warn("TTS voices warm-up issue:", e);
+      }
+    } else {
+      console.warn("Web Speech API (speechSynthesis) not available in this browser.");
+    }
 
     // Element refs
     const instructorRadios = document.querySelectorAll('input[name="instructorType"]');
@@ -66,17 +83,22 @@
       try {
         state.tts.synth.cancel();
       } catch (e) {
-        // ignore
+        console.warn("TTS cancel error:", e);
       }
       state.tts.currentUtterance = null;
     }
 
     function speak(text, voiceType) {
-      if (!state.tts.synth || !text) return;
+      if (!state.tts.synth) {
+        console.warn("TTS unavailable: speechSynthesis not found.");
+        return;
+      }
+      if (!text) return;
+
       stopSpeech();
+
       const utter = new SpeechSynthesisUtterance(text);
 
-      // Basic differentiation between instructors
       if (voiceType === "systems") {
         utter.rate = 1.02;
         utter.pitch = 0.92;
@@ -89,8 +111,18 @@
       }
 
       utter.volume = 1.0;
+
+      utter.onerror = function (event) {
+        console.error("TTS utterance error:", event.error);
+      };
+
+      console.log("🔊 TTS speak:", (text || "").slice(0, 120));
       state.tts.currentUtterance = utter;
-      state.tts.synth.speak(utter);
+      try {
+        state.tts.synth.speak(utter);
+      } catch (e) {
+        console.error("TTS speak error:", e);
+      }
     }
 
     function currentInstructorLabel() {
@@ -98,7 +130,9 @@
     }
 
     function updateInstructorUi() {
-      activeInstructorLabel.textContent = "Instructor: " + (state.currentInstructor === "systems" ? "Systems" : "Ethics");
+      activeInstructorLabel.textContent =
+        "Instructor: " + (state.currentInstructor === "systems" ? "Systems" : "Ethics");
+
       if (state.currentInstructor === "systems") {
         instructorDescription.textContent =
           "Systems Instructor active. Focus: HTML/CSS/JS structure, file wiring, stability, and implementation standards. “Structure without clarity is chaos.”";
@@ -128,9 +162,11 @@
       const jsLinked = !!document.querySelector('script[src*="app.js"]');
       if (!cssLinked) issues.push("CSS file (style.css) is not linked in the HTML head.");
       if (!jsLinked) issues.push("JavaScript file (app.js) is not linked with a <script> tag.");
-      checks.push(cssLinked && jsLinked ? "CSS and JS links detected." : "CSS/JS link detection failed.");
+      checks.push(
+        cssLinked && jsLinked ? "CSS and JS links detected." : "CSS/JS link detection failed. Check file names and paths."
+      );
 
-      // 2. No app-level error flag
+      // 2. App-level errors
       if (appError) {
         issues.push("An application initialization error was detected. Check the browser console for details.");
       } else {
@@ -140,7 +176,7 @@
       // 3. Core feature functions
       const ttsOk = !!state.tts.synth && typeof speak === "function";
       if (!ttsOk) {
-        issues.push("Web Speech API (speechSynthesis) is not available or TTS failed to initialize.");
+        issues.push("Web Speech API (speechSynthesis) is not available or TTS failed to initialize in this browser.");
       } else {
         checks.push("Text-to-Speech engine detected.");
       }
@@ -152,11 +188,10 @@
         checks.push("Ethics acknowledgment confirmed.");
       }
 
-      // Render status
       selfCheckList.innerHTML = "";
       const allOk = issues.length === 0;
-
       const entries = allOk ? checks : [...checks, ...issues];
+
       entries.forEach((msg) => {
         const li = document.createElement("li");
         li.textContent = msg;
@@ -199,7 +234,6 @@
     function scoreSubmission(data) {
       let score = 0;
 
-      // Basic completeness
       if (data.student) score += 1;
       if (data.lesson) score += 1;
       if (data.url.startsWith("https://")) score += 2;
@@ -212,7 +246,6 @@
 
       if (data.ethics) score += 2;
 
-      // Additional structural hint words for systems
       if (state.currentInstructor === "systems") {
         const lower = data.desc.toLowerCase();
         const structuralTokens = ["html", "css", "javascript", "js", "tts", "speech", "structure", "wiring"];
@@ -221,7 +254,6 @@
         });
       }
 
-      // Additional governance hint words for ethics
       if (state.currentInstructor === "ethics") {
         const lower = data.desc.toLowerCase();
         const ethicsTokens = [
@@ -243,7 +275,6 @@
     }
 
     function decideResult(score) {
-      // Reasonably strict: require at least 7 points for provisional certification
       return score >= 7 ? "pass" : "fail";
     }
 
@@ -362,7 +393,6 @@
     function runEvaluation() {
       stopSpeech();
 
-      // Self-check gate
       const selfCheckOk = runSelfCheck();
       if (!selfCheckOk) {
         const msg =
@@ -406,7 +436,6 @@
       const result = decideResult(score);
       state.lastResult = { data, result, score };
 
-      // Populate meta
       metaStudent.textContent = data.student;
       metaLesson.textContent = data.lesson;
       metaInstructor.textContent = currentInstructorLabel();
@@ -440,7 +469,6 @@
 
         resultSummary.textContent = summaryText;
 
-        // Certificate generation
         const cert = generateCertificate(data, state.currentInstructor);
         state.lastCertificate = cert;
         renderCertificate(cert);
@@ -449,7 +477,6 @@
         notifyMessage.textContent =
           "Provisional pass recorded. Notify an instructor to request human review. Until then, this certificate is not active.";
 
-        // TTS
         const voiceMsg =
           (state.currentInstructor === "systems"
             ? "Systems Instructor report. Your submission is provisionally certified. "
@@ -506,7 +533,6 @@
     lessonDescInput.addEventListener("input", updateDescriptionCount);
 
     btnIntroPlay.addEventListener("click", () => {
-      const data = collectFormData();
       const introLines = [];
 
       introLines.push(
@@ -531,7 +557,7 @@
         "Fill in your name, lesson, system URL, and a clear description. Confirm ethics acknowledgment. Then run the evaluation."
       );
       introLines.push(
-        "If you receive a provisional pass, click Notify Instructor to submit your system for human review and activate your certificate."
+        "If you receive a provisional pass, click Notify Instructor to submit your system for human review and to activate your certificate."
       );
 
       speak(introLines.join(" "), state.currentInstructor);
@@ -568,7 +594,6 @@
         return;
       }
 
-      // Lock current certificate and simulate notification
       btnNotifyInstructor.disabled = true;
 
       const msg =
@@ -581,7 +606,7 @@
     btnCertVoice.addEventListener("click", () => {
       if (!state.lastCertificate) {
         const msg =
-          "No certificate has been generated yet. Once you achieve a provisional pass, a certificate will appear here along with its tracking ID and URL parameters.";
+          "No certificate has been generated yet. Once you achieve a provisional pass, a certificate will appear here along with its tracking I D and URL parameters.";
         speak(msg, state.currentInstructor);
         return;
       }
@@ -608,10 +633,10 @@
     setBadge(selfCheckStatus, "soft", "Not run");
     setBadge(statusBadge, "soft", "Awaiting evaluation");
 
-    // mark app as ready for self-check
     window.__fdaAppReady = true;
+    console.log("✅ Tutor AI app initialized. TTS available:", !!state.tts.synth);
   } catch (e) {
     console.error("Tutor AI app initialization error:", e);
     appError = true;
   }
-})();
+});
