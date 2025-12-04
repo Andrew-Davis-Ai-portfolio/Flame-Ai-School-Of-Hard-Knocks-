@@ -476,6 +476,101 @@ textarea::placeholder {
   cursor: pointer;
 }
 
+/* 🔥 DOJO MAP STYLES (NEW) */
+.flame-dojo-map {
+  margin: 26px auto 18px;
+  padding: 18px 14px 16px;
+  max-width: 960px;
+  border-radius: 18px;
+  background: radial-gradient(circle at top, rgba(245,181,68,0.18), rgba(2,4,9,0.98));
+  border: 1px solid rgba(245,181,68,0.4);
+  box-shadow: 0 0 32px rgba(0,0,0,0.8);
+}
+
+.flame-dojo-map__header h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.flame-dojo-map__header p {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: #b0b7c9;
+}
+
+.flame-dojo-map__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+/* Tiles */
+.dojo-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 10px 12px;
+  text-decoration: none;
+  border-radius: 14px;
+  background: rgba(5,7,12,0.95);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #f7f7ff;
+  font-size: 0.86rem;
+  box-shadow: 0 0 18px rgba(0,0,0,0.7);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.dojo-tile--primary {
+  border-color: rgba(245,181,68,0.85);
+  background: radial-gradient(circle at top, rgba(245,181,68,0.28), #05070c);
+}
+
+.dojo-tile__icon {
+  font-size: 1.4rem;
+}
+
+.dojo-tile__title {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+
+.dojo-tile__desc {
+  margin: 0;
+  color: #b0b7c9;
+  font-size: 0.82rem;
+}
+
+.dojo-tile__tag {
+  margin-top: 4px;
+  align-self: flex-start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(245,181,68,0.14);
+  color: #ffd97a;
+}
+
+.dojo-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 26px rgba(245,181,68,0.85);
+  border-color: rgba(245,181,68,0.7);
+  background: radial-gradient(circle at top, rgba(245,181,68,0.24), #05070c);
+}
+
+.dojo-tile:active {
+  transform: translateY(0);
+  box-shadow: 0 0 16px rgba(245,181,68,0.6);
+}
+
 /* RESPONSIVE */
 @media (max-width: 800px) {
   .tutor-header {
@@ -489,5 +584,9 @@ textarea::placeholder {
 
   .training-layout {
     grid-template-columns: 1fr;
+  }
+
+  .flame-dojo-map {
+    padding: 16px 12px 14px;
   }
 }
