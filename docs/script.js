@@ -1,430 +1,617 @@
-console.log("🧪 Tutor AI Lab Console loaded");
+// Flame Division Academy — Tutor AI Instructor Engine
+// app.js — client-side logic, evaluation, TTS, certificate generation
 
-document.addEventListener("DOMContentLoaded", function () {
-  // -----------------------
-  // ELEMENT REFERENCES
-  // -----------------------
-  const instructorButtons = document.querySelectorAll(".fd-toggle-btn");
-  const instructorLabel = document.getElementById("instructor-label");
-  const instructorText = document.getElementById("instructor-text");
-
-  const form = document.getElementById("submission-form");
-  const inputStudent = document.getElementById("student-name");
-  const inputLesson = document.getElementById("lesson-name");
-  const inputUrl = document.getElementById("system-url");
-  const inputDesc = document.getElementById("system-description");
-  const btnEvaluate = document.getElementById("btn-evaluate");
-  const btnNotify = document.getElementById("btn-notify");
-  const formError = document.getElementById("form-error");
-
-  const statusBadge = document.getElementById("status-badge");
-  const resultText = document.getElementById("result-text");
-
-  const certPreview = document.getElementById("cert-preview");
-  const certStudent = document.getElementById("cert-student");
-  const certLesson = document.getElementById("cert-lesson");
-  const certInstructor = document.getElementById("cert-instructor");
-  const certDate = document.getElementById("cert-date");
-  const certUrl = document.getElementById("cert-url");
-
-  const ttsSection = document.getElementById("tts-section");
-  const ttsButton = document.getElementById("btn-tts");
-  const ttsUnsupported = document.getElementById("tts-unsupported");
-
-  const notifyConfirmation = document.getElementById("notify-confirmation");
-
-  // -----------------------
-  // STATE
-  // -----------------------
-  let currentInstructor = "systems"; // "systems" or "ethics"
-  let currentCertData = null;
-  let isEvaluating = false;
-
-  // TTS support check (simplified for better compatibility)
-  const hasTtsSupport = typeof window.speechSynthesis !== "undefined";
-  console.log("🔊 TTS support detected:", hasTtsSupport);
-
-  if (!hasTtsSupport) {
-    ttsUnsupported.classList.remove("is-hidden");
-    if (ttsButton) {
-      ttsButton.disabled = true;
-    }
-  }
-
-  // -----------------------
-  // HELPERS
-  // -----------------------
-
-  function resetEvaluationState() {
-    isEvaluating = false;
-    currentCertData = null;
-    formError.textContent = "";
-    notifyConfirmation.textContent = "";
-
-    // Status badge
-    statusBadge.textContent = "🔎 Awaiting submission";
-    statusBadge.classList.remove("status-evaluating", "status-fail", "status-pass");
-    statusBadge.classList.add("status-awaiting");
-
-    // Result text
-    resultText.textContent =
-      "Submit your system to receive structured feedback from the selected instructor.";
-
-    // Hide cert and TTS, disable notify
-    certPreview.classList.add("is-hidden");
-    ttsSection.classList.add("is-hidden");
-    btnNotify.classList.add("is-hidden");
-    btnNotify.disabled = true;
-
-    // Stop any ongoing speech
-    if (hasTtsSupport && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-  }
-
-  function setInstructor(instructor) {
-    currentInstructor = instructor;
-    instructorButtons.forEach((btn) => {
-      const isActive = btn.dataset.instructor === instructor;
-      btn.classList.toggle("is-active", isActive);
-      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
-    });
-
-    if (instructor === "systems") {
-      instructorLabel.textContent = "Systems Instructor — Structural Review";
-      instructorText.textContent =
-        "I verify structure, wiring, and functionality of your system. Clean HTML, CSS, JS, and stable behavior unlock provisional certification.";
-    } else {
-      instructorLabel.textContent = "Ethics Instructor — Responsible AI Review";
-      instructorText.textContent =
-        "I reinforce responsible, safe, and aligned AI use. Your system must clearly describe intent, avoid harm, and respect users and data.";
-    }
-
-    resetEvaluationState();
-  }
-
-  function setStatus(status, label) {
-    // status: "awaiting" | "evaluating" | "fail" | "pass"
-    statusBadge.classList.remove("status-awaiting", "status-evaluating", "status-fail", "status-pass");
-    if (status === "awaiting") {
-      statusBadge.classList.add("status-awaiting");
-    } else if (status === "evaluating") {
-      statusBadge.classList.add("status-evaluating");
-    } else if (status === "fail") {
-      statusBadge.classList.add("status-fail");
-    } else if (status === "pass") {
-      statusBadge.classList.add("status-pass");
-    }
-    statusBadge.textContent = label;
-  }
-
-  function buildCertificateData(student, lesson) {
-    const instructorType = currentInstructor === "systems" ? "Systems" : "Ethics";
-    const now = new Date();
-    const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
-
-    const encodedName = encodeURIComponent(student.trim());
-    const encodedLesson = encodeURIComponent(lesson.trim());
-    const encodedInstructor = encodeURIComponent(currentInstructor);
-    const encodedDate = encodeURIComponent(dateStr);
-
-    const pseudoUrl =
-      "https://andrew-davis-ai-portfolio.github.io/Tutor-Ai/certificates/index.html" +
-      `?name=${encodedName}&lesson=${encodedLesson}&instructor=${encodedInstructor}&date=${encodedDate}`;
-
-    return {
-      studentName: student.trim(),
-      lessonName: lesson.trim(),
-      instructorType,
-      date: dateStr,
-      certUrl: pseudoUrl,
+(function () {
+  let appError = false;
+  try {
+    const state = {
+      currentInstructor: "systems",
+      lastResult: null,
+      lastCertificate: null,
+      tts: {
+        synth: window.speechSynthesis || null,
+        currentUtterance: null,
+      },
     };
-  }
 
-  function renderCertificate(cert) {
-    certStudent.textContent = cert.studentName;
-    certLesson.textContent = cert.lessonName;
-    certInstructor.textContent = cert.instructorType;
-    certDate.textContent = cert.date;
-    certUrl.textContent = cert.certUrl;
-    certPreview.classList.remove("is-hidden");
-  }
+    // Element refs
+    const instructorRadios = document.querySelectorAll('input[name="instructorType"]');
+    const instructorDescription = document.getElementById("instructor-description");
+    const studentNameInput = document.getElementById("studentName");
+    const lessonNameInput = document.getElementById("lessonName");
+    const systemUrlInput = document.getElementById("systemUrl");
+    const lessonDescInput = document.getElementById("lessonDescription");
+    const descCount = document.getElementById("description-count");
+    const ethicsAck = document.getElementById("ethicsAck");
 
-  function validateFields() {
-    const student = inputStudent.value.trim();
-    const lesson = inputLesson.value.trim();
-    const url = inputUrl.value.trim();
-    const desc = inputDesc.value.trim();
+    const selfCheckStatus = document.getElementById("selfCheckStatus");
+    const selfCheckList = document.getElementById("selfCheckList");
 
-    if (!student || !lesson || !url || !desc) {
+    const btnIntroPlay = document.getElementById("btnIntroPlay");
+    const btnIntroStop = document.getElementById("btnIntroStop");
+    const btnEvaluate = document.getElementById("btnEvaluate");
+    const btnResultPlay = document.getElementById("btnResultPlay");
+    const btnResultStop = document.getElementById("btnResultStop");
+    const btnNotifyInstructor = document.getElementById("btnNotifyInstructor");
+    const btnCertVoice = document.getElementById("btnCertVoice");
+
+    const statusBadge = document.getElementById("statusBadge");
+    const activeInstructorLabel = document.getElementById("activeInstructorLabel");
+    const resultSummary = document.getElementById("resultSummary");
+    const metaStudent = document.getElementById("metaStudent");
+    const metaLesson = document.getElementById("metaLesson");
+    const metaInstructor = document.getElementById("metaInstructor");
+    const metaResult = document.getElementById("metaResult");
+    const certificatePreview = document.getElementById("certificatePreview");
+    const certificateUrl = document.getElementById("certificateUrl");
+    const notifyMessage = document.getElementById("notifyMessage");
+    const disclaimerText = document.getElementById("disclaimerText");
+
+    // ---- Helpers ----
+
+    function setBadge(statusElement, type, text) {
+      statusElement.classList.remove("badge-soft", "badge-ok", "badge-bad");
+      if (type === "ok") {
+        statusElement.classList.add("badge-ok");
+      } else if (type === "bad") {
+        statusElement.classList.add("badge-bad");
+      } else {
+        statusElement.classList.add("badge-soft");
+      }
+      statusElement.textContent = text;
+    }
+
+    function stopSpeech() {
+      if (!state.tts.synth) return;
+      try {
+        state.tts.synth.cancel();
+      } catch (e) {
+        // ignore
+      }
+      state.tts.currentUtterance = null;
+    }
+
+    function speak(text, voiceType) {
+      if (!state.tts.synth || !text) return;
+      stopSpeech();
+      const utter = new SpeechSynthesisUtterance(text);
+
+      // Basic differentiation between instructors
+      if (voiceType === "systems") {
+        utter.rate = 1.02;
+        utter.pitch = 0.92;
+      } else if (voiceType === "ethics") {
+        utter.rate = 0.96;
+        utter.pitch = 1.02;
+      } else {
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+      }
+
+      utter.volume = 1.0;
+      state.tts.currentUtterance = utter;
+      state.tts.synth.speak(utter);
+    }
+
+    function currentInstructorLabel() {
+      return state.currentInstructor === "systems" ? "Systems Instructor" : "Ethics Instructor";
+    }
+
+    function updateInstructorUi() {
+      activeInstructorLabel.textContent = "Instructor: " + (state.currentInstructor === "systems" ? "Systems" : "Ethics");
+      if (state.currentInstructor === "systems") {
+        instructorDescription.textContent =
+          "Systems Instructor active. Focus: HTML/CSS/JS structure, file wiring, stability, and implementation standards. “Structure without clarity is chaos.”";
+        disclaimerText.textContent =
+          "Structural clarity is non-negotiable. The Systems Instructor evaluates how your HTML, CSS, and JavaScript cooperate to form a stable, maintainable system.";
+      } else {
+        instructorDescription.textContent =
+          "Ethics Instructor active. Focus: governance, accountability, risk framing, and responsible AI deployment. “Ethics approval does not remove responsibility. It confirms awareness.”";
+        disclaimerText.textContent =
+          "Ethics approval does not remove responsibility. It confirms awareness. The Ethics Instructor evaluates whether you understand the impact, risks, and accountability boundaries of your system.";
+      }
+    }
+
+    function updateDescriptionCount() {
+      const len = (lessonDescInput.value || "").trim().length;
+      descCount.textContent = `${len} characters (minimum recommended: 160)`;
+    }
+
+    // ---- Self-check ----
+
+    function runSelfCheck() {
+      const issues = [];
+      const checks = [];
+
+      // 1. HTML links to CSS and JS
+      const cssLinked = !!document.querySelector('link[rel="stylesheet"][href*="style.css"]');
+      const jsLinked = !!document.querySelector('script[src*="app.js"]');
+      if (!cssLinked) issues.push("CSS file (style.css) is not linked in the HTML head.");
+      if (!jsLinked) issues.push("JavaScript file (app.js) is not linked with a <script> tag.");
+      checks.push(cssLinked && jsLinked ? "CSS and JS links detected." : "CSS/JS link detection failed.");
+
+      // 2. No app-level error flag
+      if (appError) {
+        issues.push("An application initialization error was detected. Check the browser console for details.");
+      } else {
+        checks.push("Core initialization completed without fatal errors.");
+      }
+
+      // 3. Core feature functions
+      const ttsOk = !!state.tts.synth && typeof speak === "function";
+      if (!ttsOk) {
+        issues.push("Web Speech API (speechSynthesis) is not available or TTS failed to initialize.");
+      } else {
+        checks.push("Text-to-Speech engine detected.");
+      }
+
+      // 4. Ethics acknowledgment
+      if (!ethicsAck.checked) {
+        issues.push("Ethics acknowledgment checkbox is not checked.");
+      } else {
+        checks.push("Ethics acknowledgment confirmed.");
+      }
+
+      // Render status
+      selfCheckList.innerHTML = "";
+      const allOk = issues.length === 0;
+
+      const entries = allOk ? checks : [...checks, ...issues];
+      entries.forEach((msg) => {
+        const li = document.createElement("li");
+        li.textContent = msg;
+        if (issues.includes(msg)) {
+          li.style.color = "#ffb0c1";
+        }
+        selfCheckList.appendChild(li);
+      });
+
+      if (allOk) {
+        setBadge(selfCheckStatus, "ok", "Self-check passed");
+      } else {
+        setBadge(selfCheckStatus, "bad", "Self-check failed");
+      }
+
+      return allOk;
+    }
+
+    // ---- Evaluation Logic ----
+
+    function collectFormData() {
+      const student = (studentNameInput.value || "").trim();
+      const lesson = (lessonNameInput.value || "").trim();
+      const url = (systemUrlInput.value || "").trim();
+      const desc = (lessonDescInput.value || "").trim();
+      const ethics = !!ethicsAck.checked;
+      return { student, lesson, url, desc, ethics };
+    }
+
+    function validateForm(data) {
+      const errors = [];
+      if (!data.student) errors.push("Student name is required.");
+      if (!data.lesson) errors.push("Lesson name is required.");
+      if (!data.url) errors.push("System URL is required.");
+      if (!data.desc) errors.push("System description is required.");
+      if (!data.ethics) errors.push("Ethics acknowledgment is required.");
+      return errors;
+    }
+
+    function scoreSubmission(data) {
+      let score = 0;
+
+      // Basic completeness
+      if (data.student) score += 1;
+      if (data.lesson) score += 1;
+      if (data.url.startsWith("https://")) score += 2;
+      else if (data.url.startsWith("http://")) score += 1;
+
+      const len = data.desc.length;
+      if (len >= 160 && len <= 1000) score += 3;
+      else if (len >= 100) score += 2;
+      else if (len >= 60) score += 1;
+
+      if (data.ethics) score += 2;
+
+      // Additional structural hint words for systems
+      if (state.currentInstructor === "systems") {
+        const lower = data.desc.toLowerCase();
+        const structuralTokens = ["html", "css", "javascript", "js", "tts", "speech", "structure", "wiring"];
+        structuralTokens.forEach((token) => {
+          if (lower.includes(token)) score += 0.5;
+        });
+      }
+
+      // Additional governance hint words for ethics
+      if (state.currentInstructor === "ethics") {
+        const lower = data.desc.toLowerCase();
+        const ethicsTokens = [
+          "ethics",
+          "privacy",
+          "responsible",
+          "governance",
+          "risk",
+          "accountability",
+          "alignment",
+          "safety",
+        ];
+        ethicsTokens.forEach((token) => {
+          if (lower.includes(token)) score += 0.5;
+        });
+      }
+
+      return score;
+    }
+
+    function decideResult(score) {
+      // Reasonably strict: require at least 7 points for provisional certification
+      return score >= 7 ? "pass" : "fail";
+    }
+
+    function generateCertificate(data, instructorType) {
+      const now = new Date();
+      const date = now.toISOString().slice(0, 10);
+      const random = Math.floor(Math.random() * 9000) + 1000;
+      const id = `FDA-${random}`;
+
+      const urlParams = new URLSearchParams();
+      urlParams.set("name", data.student || "");
+      urlParams.set("lesson", data.lesson || "");
+      urlParams.set("instructor", instructorType === "systems" ? "Systems" : "Ethics");
+      urlParams.set("date", date);
+      urlParams.set("id", id);
+
+      const certUrl = `certificates/index.html?${urlParams.toString()}`;
+
       return {
-        ok: false,
-        reason: "required",
+        student: data.student,
+        lesson: data.lesson,
+        instructor: instructorType === "systems" ? "Systems Instructor" : "Ethics Instructor",
+        date,
+        id,
+        url: certUrl,
       };
     }
 
-    return {
-      ok: true,
-      reason: null,
-      student,
-      lesson,
-      url,
-      desc,
-    };
-  }
+    function renderCertificate(cert) {
+      certificatePreview.classList.remove("certificate-preview-empty");
+      certificatePreview.innerHTML = "";
 
-  function runEvaluation() {
-    if (isEvaluating) return;
+      const wrapper = document.createElement("div");
+      wrapper.className = "certificate-inner";
 
-    const validation = validateFields();
+      const header = document.createElement("div");
+      header.className = "certificate-header";
 
-    certPreview.classList.add("is-hidden");
-    ttsSection.classList.add("is-hidden");
-    btnNotify.classList.add("is-hidden");
-    btnNotify.disabled = true;
-    notifyConfirmation.textContent = "";
+      const title = document.createElement("div");
+      title.className = "certificate-header-title";
+      title.textContent = "PROVISIONAL CERTIFICATE";
 
-    if (!validation.ok) {
-      // Required fields missing
-      setStatus("fail", "❌ Not Certified");
-      formError.textContent = "All fields are required. Please complete the form.";
-      if (currentInstructor === "systems") {
-        resultText.textContent =
-          "Systems Instructor: I cannot certify an incomplete submission. Provide your name, lesson name, system URL, and a short description so I can evaluate structure and wiring.";
-      } else {
-        resultText.textContent =
-          "Ethics Instructor: I need all fields completed to review your intent and responsible usage. Explain what you’re building and how you will prevent harm or misuse.";
+      const badge = document.createElement("div");
+      badge.className = "certificate-badge";
+      badge.textContent = "PENDING HUMAN REVIEW";
+
+      header.appendChild(title);
+      header.appendChild(badge);
+
+      const body = document.createElement("div");
+      body.className = "certificate-body";
+
+      const left = document.createElement("div");
+      const intro = document.createElement("p");
+      intro.textContent =
+        "This document confirms provisional evaluation of the following system under Flame Division Academy.";
+      left.appendChild(intro);
+
+      const fields = document.createElement("div");
+      fields.className = "certificate-fields";
+
+      function fieldRow(label, value) {
+        const row = document.createElement("div");
+        const l = document.createElement("div");
+        l.className = "certificate-field-label";
+        l.textContent = label;
+        const v = document.createElement("div");
+        v.className = "certificate-field-value";
+        v.textContent = value || "—";
+        row.appendChild(l);
+        row.appendChild(v);
+        return row;
       }
-      return;
+
+      fields.appendChild(fieldRow("Student", cert.student));
+      fields.appendChild(fieldRow("Lesson", cert.lesson));
+      fields.appendChild(fieldRow("Instructor", cert.instructor));
+      fields.appendChild(fieldRow("Date", cert.date));
+      fields.appendChild(fieldRow("Certificate ID", cert.id));
+
+      left.appendChild(fields);
+
+      const right = document.createElement("div");
+      const p1 = document.createElement("p");
+      p1.textContent =
+        "Status: Provisional. This certificate has not been activated. Human instructor review is required.";
+      const p2 = document.createElement("p");
+      p2.textContent =
+        "Scope: This evaluation certifies the structure and framing of the system as presented. Real-world deployment and outcomes remain the responsibility of the student and their organization.";
+      right.appendChild(p1);
+      right.appendChild(p2);
+
+      body.appendChild(left);
+      body.appendChild(right);
+
+      const footer = document.createElement("div");
+      footer.className = "certificate-footer";
+      const f1 = document.createElement("span");
+      f1.textContent = "Flame Division Academy — Systems, not intentions.";
+      const f2 = document.createElement("span");
+      f2.textContent = "Human Review Required • No Auto-Approval";
+
+      footer.appendChild(f1);
+      footer.appendChild(f2);
+
+      wrapper.appendChild(header);
+      wrapper.appendChild(body);
+      wrapper.appendChild(footer);
+
+      certificatePreview.appendChild(wrapper);
+      certificateUrl.textContent = cert.url;
     }
 
-    const { student, lesson, url, desc } = validation;
+    // ---- Evaluation handler ----
 
-    // Start evaluation
-    isEvaluating = true;
-    formError.textContent = "";
-    setStatus("evaluating", "⏳ Evaluating…");
-    resultText.textContent =
-      currentInstructor === "systems"
-        ? "Systems Instructor: Running a quick structural scan of your system URL, lesson context, and description."
-        : "Ethics Instructor: Reviewing your description for intent, clarity, and responsible AI practices.";
+    function runEvaluation() {
+      stopSpeech();
 
-    setTimeout(function () {
-      isEvaluating = false;
+      // Self-check gate
+      const selfCheckOk = runSelfCheck();
+      if (!selfCheckOk) {
+        const msg =
+          (state.currentInstructor === "systems"
+            ? "Self-check failed. Structure and wiring must be stable before evaluation. "
+            : "Self-check failed. Governance cannot validate a system that is not structurally stable. ") +
+          "Resolve the listed issues, confirm ethics acknowledgment, and run the evaluation again.";
+        resultSummary.textContent = msg;
+        setBadge(statusBadge, "bad", "Self-check failed");
+        metaResult.textContent = "Blocked by self-check.";
+        speak(msg, state.currentInstructor);
+        return;
+      }
 
-      const urlLooksValid = /^https?:\/\//i.test(url);
-      const descLongEnough = desc.length >= 40;
-      const lessonLongEnough = lesson.length >= 3;
+      const data = collectFormData();
+      const errors = validateForm(data);
+      if (errors.length > 0) {
+        const msg =
+          (state.currentInstructor === "systems"
+            ? "Input validation failed. Structure without clarity is chaos. "
+            : "Input validation failed. Ethics begins with honest, complete information. ") +
+          "Resolve the following: " +
+          errors.join(" ");
 
-      let passed = urlLooksValid && descLongEnough && lessonLongEnough;
+        resultSummary.textContent = msg;
+        setBadge(statusBadge, "bad", "Invalid input");
+        metaStudent.textContent = data.student || "—";
+        metaLesson.textContent = data.lesson || "—";
+        metaInstructor.textContent = currentInstructorLabel();
+        metaResult.textContent = "Validation errors.";
+        btnNotifyInstructor.disabled = true;
+        notifyMessage.textContent =
+          "Fix the highlighted issues and run the evaluation again before attempting to notify an instructor.";
+        state.lastResult = null;
+        state.lastCertificate = null;
+        speak(msg, state.currentInstructor);
+        return;
+      }
 
-      if (!passed) {
-        setStatus("fail", "❌ Not Certified");
+      const score = scoreSubmission(data);
+      const result = decideResult(score);
+      state.lastResult = { data, result, score };
 
-        if (!urlLooksValid) {
-          if (currentInstructor === "systems") {
-            resultText.textContent =
-              "Systems Instructor: Your System URL must be a valid link starting with http or https. Double-check your repo or live demo URL.";
-          } else {
-            resultText.textContent =
-              "Ethics Instructor: I can’t review an invalid URL. Provide a real system or repo link so your responsible-use claims can be verified.";
-          }
-        } else if (!descLongEnough) {
-          if (currentInstructor === "systems") {
-            resultText.textContent =
-              "Systems Instructor: Your description is too short. Describe your system in at least a few sentences, including key features and behavior.";
-          } else {
-            resultText.textContent =
-              "Ethics Instructor: Your description is too brief to confirm responsible behavior. Explain how you will avoid harm, protect users, and prevent misuse.";
-          }
-        } else if (!lessonLongEnough) {
-          if (currentInstructor === "systems") {
-            resultText.textContent =
-              "Systems Instructor: Your lesson name is too short. Use a more descriptive title that reflects what you actually built.";
-          } else {
-            resultText.textContent =
-              "Ethics Instructor: Choose a lesson name that clearly signals constructive, responsible learning—vague titles are harder to review.";
-          }
+      // Populate meta
+      metaStudent.textContent = data.student;
+      metaLesson.textContent = data.lesson;
+      metaInstructor.textContent = currentInstructorLabel();
+
+      if (result === "pass") {
+        setBadge(statusBadge, "ok", "Provisionally Certified");
+        metaResult.textContent = "Provisionally Certified";
+
+        const summaryLines = [];
+        if (state.currentInstructor === "systems") {
+          summaryLines.push(
+            "Systems evaluation complete. Your structure is provisionally certified under the current configuration."
+          );
+          summaryLines.push(
+            "File wiring, description depth, and URL formatting meet the minimum structural expectations for this lab environment."
+          );
+          summaryLines.push("Remember: structure without clarity is chaos. Keep your implementation readable and stable.");
+        } else {
+          summaryLines.push("Ethics evaluation complete. Your framing is provisionally cleared for awareness.");
+          summaryLines.push(
+            "You demonstrate an understanding of risk, accountability, and responsible deployment in your description."
+          );
+          summaryLines.push(
+            "Ethics approval does not remove responsibility. It confirms awareness. You remain accountable for outcomes."
+          );
         }
+        summaryLines.push(
+          "This is a provisional certification only. Click Notify Instructor to submit your system for human review and to activate your certificate."
+        );
+        const summaryText = summaryLines.join(" ");
 
-        formError.textContent = "";
-        return;
-      }
+        resultSummary.textContent = summaryText;
 
-      // PASS
-      setStatus("pass", "✅ Provisionally Certified");
+        // Certificate generation
+        const cert = generateCertificate(data, state.currentInstructor);
+        state.lastCertificate = cert;
+        renderCertificate(cert);
 
-      if (currentInstructor === "systems") {
-        resultText.textContent =
-          "Systems Instructor: Your system passed the initial structural scan. The URL, lesson context, and description meet the minimum bar for a provisional certification. Maintain clean wiring and stable behavior as you continue iterating.";
+        btnNotifyInstructor.disabled = false;
+        notifyMessage.textContent =
+          "Provisional pass recorded. Notify an instructor to request human review. Until then, this certificate is not active.";
+
+        // TTS
+        const voiceMsg =
+          (state.currentInstructor === "systems"
+            ? "Systems Instructor report. Your submission is provisionally certified. "
+            : "Ethics Instructor report. Your submission is provisionally cleared. ") +
+          "This is a provisional certification. Click Notify Instructor to submit your system for human review and to activate your certificate.";
+        speak(voiceMsg, state.currentInstructor);
       } else {
-        resultText.textContent =
-          "Ethics Instructor: Your description and intent meet the baseline for responsible AI usage. This is a provisional ethics clearance—continued accountability and ethical decision-making remain your responsibility.";
+        setBadge(statusBadge, "bad", "Needs Revision");
+        metaResult.textContent = "Needs Revision";
+
+        const base =
+          state.currentInstructor === "systems"
+            ? "Systems evaluation complete. Your structure needs revision before provisional certification."
+            : "Ethics evaluation complete. Your framing needs revision before provisional clearance.";
+
+        const hints =
+          "Strengthen your description, verify your URL, and ensure your explanation reflects either structural clarity or ethical accountability, depending on the active instructor.";
+
+        const summaryText = `${base} Current score: ${score.toFixed(
+          1
+        )}. ${hints} Run the evaluation again after improving the system.`;
+        resultSummary.textContent = summaryText;
+
+        btnNotifyInstructor.disabled = true;
+        notifyMessage.textContent =
+          "Provisional certification was not granted. Revise your system, re-run evaluation, and only then request instructor review.";
+
+        state.lastCertificate = null;
+        certificatePreview.classList.add("certificate-preview-empty");
+        certificatePreview.innerHTML =
+          '<p class="muted">No provisional certificate is available. A pass result is required to generate one.</p>';
+        certificateUrl.textContent = "—";
+
+        speak(
+          base +
+            " Current evaluation score is " +
+            score.toFixed(1) +
+            ". Structure and ethics both require clarity before certification.",
+          state.currentInstructor
+        );
       }
+    }
 
-      currentCertData = buildCertificateData(student, lesson);
-      renderCertificate(currentCertData);
+    // ---- Event bindings ----
 
-      btnNotify.disabled = false;
-      btnNotify.classList.remove("is-hidden");
+    instructorRadios.forEach((radio) => {
+      radio.addEventListener("change", () => {
+        if (!radio.checked) return;
+        state.currentInstructor = radio.value === "ethics" ? "ethics" : "systems";
+        updateInstructorUi();
+      });
+    });
 
-      if (hasTtsSupport) {
-        ttsSection.classList.remove("is-hidden");
-        ttsButton.disabled = false;
+    lessonDescInput.addEventListener("input", updateDescriptionCount);
+
+    btnIntroPlay.addEventListener("click", () => {
+      const data = collectFormData();
+      const introLines = [];
+
+      introLines.push(
+        "Welcome to the Flame Division Academy Tutor AI Lab Console. This environment issues provisional certifications only."
+      );
+
+      if (state.currentInstructor === "systems") {
+        introLines.push(
+          "You are currently operating under the Systems Instructor channel. Focus on clean HTML, CSS, and JavaScript wiring."
+        );
+        introLines.push("Structure without clarity is chaos. Make sure your system is readable, stable, and traceable.");
       } else {
-        ttsSection.classList.remove("is-hidden");
+        introLines.push(
+          "You are currently operating under the Ethics Instructor channel. Focus on governance, accountability, and risk framing."
+        );
+        introLines.push(
+          "Ethics approval does not remove responsibility. It confirms awareness. You remain accountable for deployment."
+        );
       }
 
-      formError.textContent = "";
-    }, 900);
-  }
+      introLines.push(
+        "Fill in your name, lesson, system URL, and a clear description. Confirm ethics acknowledgment. Then run the evaluation."
+      );
+      introLines.push(
+        "If you receive a provisional pass, click Notify Instructor to submit your system for human review and activate your certificate."
+      );
 
-  function buildNotifyMailto() {
-    if (!currentCertData) return;
-
-    const student = currentCertData.studentName;
-    const lesson = currentCertData.lessonName;
-    const instructorType = currentCertData.instructorType;
-    const url = inputUrl.value.trim();
-    const desc = inputDesc.value.trim();
-    const certLink = currentCertData.certUrl;
-
-    const subject = `New System Submission – ${student} – ${lesson}`;
-
-    const lines = [
-      `Student Name: ${student}`,
-      `Lesson Name: ${lesson}`,
-      `Instructor Selected: ${instructorType}`,
-      "",
-      `System URL: ${url}`,
-      "",
-      "Short Description:",
-      desc,
-      "",
-      `Provisional Certificate URL:`,
-      certLink,
-      "",
-      "Submitted via Flame Division Academy Tutor AI Lab Console.",
-    ];
-
-    const body = lines.join("\n");
-
-    const mailtoHref =
-      "mailto:flamedivision.academy@proton.me" +
-      `?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    return mailtoHref;
-  }
-
-  function handleNotifyInstructor() {
-    if (!currentCertData) return;
-
-    const mailtoHref = buildNotifyMailto();
-    if (!mailtoHref) return;
-
-    window.location.href = mailtoHref;
-    notifyConfirmation.textContent =
-      "📨 Email window opened. After sending, your submission will be reviewed by a human instructor.";
-  }
-
-  function playPassMessage() {
-    if (!currentCertData) {
-      console.log("🔊 TTS aborted: no currentCertData");
-      return;
-    }
-
-    const synth = window.speechSynthesis;
-    if (!synth) {
-      console.log("🔊 TTS not available on this platform.");
-      ttsUnsupported.classList.remove("is-hidden");
-      return;
-    }
-
-    console.log("🔊 TTS playPassMessage called.");
-
-    // Stop any ongoing speech
-    if (synth.speaking) {
-      console.log("🔊 TTS speaking already; cancelling previous utterance.");
-      synth.cancel();
-    }
-
-    const { studentName, lessonName } = currentCertData;
-
-    let message;
-    if (currentInstructor === "systems") {
-      message =
-        `System certified provisionally. ${studentName}, your lesson "${lessonName}" has passed the initial systems review. ` +
-        "Your structure, wiring, and description meet the baseline for this stage. " +
-        "Click the Notify Instructor button to send your work for review by Flame Division.";
-    } else {
-      message =
-        `Ethics criteria provisionally met. ${studentName}, your lesson "${lessonName}" aligns with responsible AI standards at this stage. ` +
-        "Remember that ethics is an ongoing practice, not a one-time pass. " +
-        "Click Notify Instructor to send your system for human approval.";
-    }
-
-    const utterance = new SpeechSynthesisUtterance(message);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-
-    utterance.onstart = () => console.log("🔊 TTS utterance started.");
-    utterance.onend = () => console.log("🔊 TTS utterance ended.");
-    utterance.onerror = (e) => console.error("🔊 TTS error:", e.error);
-
-    synth.speak(utterance);
-  }
-
-  // -----------------------
-  // EVENT LISTENERS
-  // -----------------------
-
-  instructorButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetInstructor = btn.dataset.instructor === "ethics" ? "ethics" : "systems";
-      if (targetInstructor !== currentInstructor) {
-        setInstructor(targetInstructor);
-      }
+      speak(introLines.join(" "), state.currentInstructor);
     });
-  });
 
-  btnEvaluate.addEventListener("click", (e) => {
-    e.preventDefault();
-    runEvaluation();
-  });
+    btnIntroStop.addEventListener("click", () => {
+      stopSpeech();
+    });
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    runEvaluation();
-  });
+    btnEvaluate.addEventListener("click", () => {
+      runEvaluation();
+    });
 
-  btnNotify.addEventListener("click", (e) => {
-    e.preventDefault();
-    handleNotifyInstructor();
-  });
-
-  if (ttsButton) {
-    ttsButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      console.log("🔊 TTS button clicked.");
-      if (!currentCertData) {
-        console.log("🔊 No cert data yet; cannot speak.");
+    btnResultPlay.addEventListener("click", () => {
+      if (!state.lastResult) {
+        const msg =
+          "No evaluation has been recorded yet. Configure your submission carefully and then select Run Evaluation.";
+        speak(msg, state.currentInstructor);
         return;
       }
-      if (!hasTtsSupport) {
-        console.log("🔊 No TTS support; aborting.");
+      speak(resultSummary.textContent || "", state.currentInstructor);
+    });
+
+    btnResultStop.addEventListener("click", () => {
+      stopSpeech();
+    });
+
+    btnNotifyInstructor.addEventListener("click", () => {
+      if (!state.lastResult || !state.lastCertificate || state.lastResult.result !== "pass") {
+        const msg =
+          "There is no active provisional certificate to submit. Achieve a pass result before notifying an instructor.";
+        speak(msg, state.currentInstructor);
+        notifyMessage.textContent = msg;
         return;
       }
-      playPassMessage();
+
+      // Lock current certificate and simulate notification
+      btnNotifyInstructor.disabled = true;
+
+      const msg =
+        "This is a provisional certification. Your instructor has been notified in principle. Human review is required to activate this certificate. Ethics approval does not remove responsibility. It confirms awareness.";
+      notifyMessage.textContent =
+        "Notification recorded locally. Share your system URL and the generated certificate ID with your instructor for live human review.";
+      speak(msg, state.currentInstructor);
     });
-  }
 
-  // Some browsers load voices asynchronously
-  if (hasTtsSupport) {
-    window.speechSynthesis.onvoiceschanged = function () {
-      console.log("🔊 TTS voices loaded.");
-    };
-  }
+    btnCertVoice.addEventListener("click", () => {
+      if (!state.lastCertificate) {
+        const msg =
+          "No certificate has been generated yet. Once you achieve a provisional pass, a certificate will appear here along with its tracking ID and URL parameters.";
+        speak(msg, state.currentInstructor);
+        return;
+      }
 
-  // Initialize
-  resetEvaluationState();
-});
+      const cert = state.lastCertificate;
+      const text =
+        "Certificate briefing. Student: " +
+        cert.student +
+        ". Lesson: " +
+        cert.lesson +
+        ". Instructor channel: " +
+        cert.instructor +
+        ". Date: " +
+        cert.date +
+        ". Certificate I D: " +
+        cert.id +
+        ". This document is provisional only. To request activation, you must contact a human instructor with your system URL and certificate I D for review.";
+      speak(text, state.currentInstructor);
+    });
+
+    // Initial UI state
+    updateInstructorUi();
+    updateDescriptionCount();
+    setBadge(selfCheckStatus, "soft", "Not run");
+    setBadge(statusBadge, "soft", "Awaiting evaluation");
+
+    // mark app as ready for self-check
+    window.__fdaAppReady = true;
+  } catch (e) {
+    console.error("Tutor AI app initialization error:", e);
+    appError = true;
+  }
+})();
