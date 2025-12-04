@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Flame Division Academy — Tutor AI Lab Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="fd-lab">
+    <!-- HEADER -->
+    <header class="fd-header">
+      <h1>Flame Division Academy — Tutor AI Lab Console</h1>
+      <p>Submit your system for guided evaluation by a virtual instructor.</p>
+    </header>
+
+    <!-- INSTRUCTOR SELECTOR CARD -->
+    <section class="fd-card fd-card-instructor">
+      <div class="fd-card-header">
+        <h2>Choose Your Instructor</h2>
+        <p class="fd-card-subtitle">Select which lens you want applied to your system.</p>
+      </div>
+
+      <div class="fd-instructor-toggle" role="radiogroup" aria-label="Instructor Selection">
+        <button
+          type="button"
+          class="fd-toggle-btn is-active"
+          data-instructor="systems"
+          aria-pressed="true"
+        >
+          🧩 Systems Instructor
+        </button>
+        <button
+          type="button"
+          class="fd-toggle-btn"
+          data-instructor="ethics"
+          aria-pressed="false"
+        >
+          🛡 Ethics Instructor
+        </button>
+      </div>
+
+      <div class="fd-instructor-description">
+        <h3 id="instructor-label">Systems Instructor — Structural Review</h3>
+        <p id="instructor-text">
+          I verify structure, wiring, and functionality of your system: HTML, CSS, JS, and overall flow.
+        </p>
+      </div>
+    </section>
+
+    <!-- SUBMISSION FORM CARD -->
+    <section class="fd-card fd-card-form">
+      <div class="fd-card-header">
+        <h2>System Submission</h2>
+        <p class="fd-card-subtitle">All fields are required for provisional certification.</p>
+      </div>
+
+      <form id="submission-form" novalidate>
+        <div class="fd-form-grid">
+          <div class="fd-form-field">
+            <label for="student-name">Student Name</label>
+            <input type="text" id="student-name" autocomplete="name" required />
+          </div>
+
+          <div class="fd-form-field">
+            <label for="lesson-name">Lesson Name</label>
+            <input type="text" id="lesson-name" required />
+          </div>
+        </div>
+
+        <div class="fd-form-field">
+          <label for="system-url">System URL (repo or live demo)</label>
+          <input type="url" id="system-url" placeholder="https://…" required />
+        </div>
+
+        <div class="fd-form-field">
+          <label for="system-description">Short Description (3–5 sentences)</label>
+          <textarea
+            id="system-description"
+            rows="5"
+            required
+            placeholder="Explain what your system does, how it works, and how it will be used."
+          ></textarea>
+        </div>
+
+        <div class="fd-form-actions">
+          <button type="button" id="btn-evaluate" class="fd-btn fd-btn-primary">
+            ⚡ Run Evaluation
+          </button>
+
+          <button
+            type="button"
+            id="btn-notify"
+            class="fd-btn fd-btn-secondary is-hidden"
+            disabled
+          >
+            📨 Notify Instructor
+          </button>
+        </div>
+
+        <p id="form-error" class="fd-form-error" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- EVALUATION RESULT CARD -->
+    <section class="fd-card fd-card-result">
+      <div class="fd-card-header">
+        <h2>Evaluation Result</h2>
+        <p class="fd-card-subtitle">Status, feedback, and provisional certificate preview.</p>
+      </div>
+
+      <div class="fd-status-row">
+        <span id="status-badge" class="fd-status-badge status-awaiting">
+          🔎 Awaiting submission
+        </span>
+      </div>
+
+      <div class="fd-result-summary">
+        <h3>Result Summary</h3>
+        <p id="result-text">
+          Submit your system to receive structured feedback from the selected instructor.
+        </p>
+      </div>
+
+      <!-- CERTIFICATE PREVIEW -->
+      <div id="cert-preview" class="fd-cert-preview is-hidden">
+        <h3>📜 Provisional Certificate Preview</h3>
+        <div class="fd-cert-body">
+          <p><span class="fd-cert-label">Student:</span> <span id="cert-student"></span></p>
+          <p><span class="fd-cert-label">Lesson:</span> <span id="cert-lesson"></span></p>
+          <p><span class="fd-cert-label">Instructor:</span> <span id="cert-instructor"></span></p>
+          <p><span class="fd-cert-label">Date:</span> <span id="cert-date"></span></p>
+          <p>
+            <span class="fd-cert-label">Provisional Certificate URL:</span>
+            <span id="cert-url" class="fd-cert-url"></span>
+          </p>
+        </div>
+        <p class="fd-cert-note">
+          This is a provisional certificate preview. Final approval is granted only after human review.
+        </p>
+      </div>
+
+      <!-- TTS SECTION -->
+      <div id="tts-section" class="fd-tts-section is-hidden">
+        <button type="button" id="btn-tts" class="fd-btn fd-btn-tts">
+          🔊 Play Instructor Message
+        </button>
+        <p class="fd-tts-note">
+          This will read your pass message and remind you to click <strong>Notify Instructor</strong>.
+        </p>
+        <p id="tts-unsupported" class="fd-tts-unsupported is-hidden">
+          TTS not supported in this browser. Please read the pass message manually and notify your instructor.
+        </p>
+      </div>
+
+      <!-- NOTIFY CONFIRMATION -->
+      <p id="notify-confirmation" class="fd-notify-confirmation"></p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="fd-footer">
+      <p>
+        Flame Division Academy certifies systems, not intentions.
+        All certificates are provisional until a human instructor reviews your work.
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
