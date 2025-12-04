@@ -4,6 +4,46 @@
 document.addEventListener("DOMContentLoaded", function () {
   let appError = false;
 
+    // ------------------------------
+  // SAFARI / IN-APP BROWSER DETECTOR
+  // ------------------------------
+  function isInAppBrowser() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+    // Known in-app browser signatures
+    const blockers = [
+      "GITHUB",       // GitHub mobile app
+      "FBAN", "FBAV", // Facebook
+      "Instagram",    // IG browser
+      "Twitter",      // X browser
+      "TikTok",       // TikTok browser
+      "Snapchat",     // Snap browser
+      "Electron",     // Some wrappers
+      "ChatGPT",      // ChatGPT in-app browser
+      "Pinterest",
+      "Discord",
+      "Messenger"
+    ];
+
+    return blockers.some(b => ua.includes(b));
+  }
+
+  function isRealSafari() {
+    const ua = navigator.userAgent;
+    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
+    return isSafari;
+  }
+
+  // If not real Safari OR inside an in-app browser → warn user
+  if (isInAppBrowser() || !isRealSafari()) {
+    setTimeout(() => {
+      alert(
+        "⚠️ Audio Disabled: Your browser does not allow Text-to-Speech.\n\n" +
+        "Open this page in Safari for full instructor audio."
+      );
+    }, 600);
+  }
+
   const hasSynth =
   typeof window !== "undefined" && typeof window.speechSynthesis !== "undefined";
 const hasUtter =
