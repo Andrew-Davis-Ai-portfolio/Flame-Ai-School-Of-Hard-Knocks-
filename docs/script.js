@@ -40,13 +40,15 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentCertData = null;
   let isEvaluating = false;
 
-  // TTS support check
-  const hasTtsSupport = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+ // TTS support check (simplified for better compatibility)
+const hasTtsSupport = typeof window.speechSynthesis !== "undefined";
 
-  if (!hasTtsSupport) {
-    ttsUnsupported.classList.remove("is-hidden");
+if (!hasTtsSupport) {
+  ttsUnsupported.classList.remove("is-hidden");
+  if (ttsButton) {
     ttsButton.disabled = true;
   }
+}
 
   // -----------------------
   // HELPERS
