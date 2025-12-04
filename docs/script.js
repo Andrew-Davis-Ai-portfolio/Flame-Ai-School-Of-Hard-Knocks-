@@ -40,15 +40,16 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentCertData = null;
   let isEvaluating = false;
 
- // TTS support check (simplified for better compatibility)
-const hasTtsSupport = typeof window.speechSynthesis !== "undefined";
+  // TTS support check (simplified for better compatibility)
+  const hasTtsSupport = typeof window.speechSynthesis !== "undefined";
+  console.log("🔊 TTS support detected:", hasTtsSupport);
 
-if (!hasTtsSupport) {
-  ttsUnsupported.classList.remove("is-hidden");
-  if (ttsButton) {
-    ttsButton.disabled = true;
+  if (!hasTtsSupport) {
+    ttsUnsupported.classList.remove("is-hidden");
+    if (ttsButton) {
+      ttsButton.disabled = true;
+    }
   }
-}
 
   // -----------------------
   // HELPERS
@@ -327,41 +328,51 @@ if (!hasTtsSupport) {
   }
 
   function playPassMessage() {
-  if (!currentCertData) return;
+    if (!currentCertData) {
+      console.log("🔊 TTS aborted: no currentCertData");
+      return;
+    }
 
-  const synth = window.speechSynthesis;
-  if (!synth) {
-    ttsUnsupported.classList.remove("is-hidden");
-    return;
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      console.log("🔊 TTS not available on this platform.");
+      ttsUnsupported.classList.remove("is-hidden");
+      return;
+    }
+
+    console.log("🔊 TTS playPassMessage called.");
+
+    // Stop any ongoing speech
+    if (synth.speaking) {
+      console.log("🔊 TTS speaking already; cancelling previous utterance.");
+      synth.cancel();
+    }
+
+    const { studentName, lessonName } = currentCertData;
+
+    let message;
+    if (currentInstructor === "systems") {
+      message =
+        `System certified provisionally. ${studentName}, your lesson "${lessonName}" has passed the initial systems review. ` +
+        "Your structure, wiring, and description meet the baseline for this stage. " +
+        "Click the Notify Instructor button to send your work for review by Flame Division.";
+    } else {
+      message =
+        `Ethics criteria provisionally met. ${studentName}, your lesson "${lessonName}" aligns with responsible AI standards at this stage. ` +
+        "Remember that ethics is an ongoing practice, not a one-time pass. " +
+        "Click Notify Instructor to send your system for human approval.";
+    }
+
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onstart = () => console.log("🔊 TTS utterance started.");
+    utterance.onend = () => console.log("🔊 TTS utterance ended.");
+    utterance.onerror = (e) => console.error("🔊 TTS error:", e.error);
+
+    synth.speak(utterance);
   }
-
-  // Stop any ongoing speech
-  if (synth.speaking) {
-    synth.cancel();
-  }
-
-  const { studentName, lessonName } = currentCertData;
-
-  let message;
-  if (currentInstructor === "systems") {
-    message =
-      `System certified provisionally. ${studentName}, your lesson "${lessonName}" has passed the initial systems review. ` +
-      "Your structure, wiring, and description meet the baseline for this stage. " +
-      "Click the Notify Instructor button to send your work for review by Flame Division.";
-  } else {
-    message =
-      `Ethics criteria provisionally met. ${studentName}, your lesson "${lessonName}" aligns with responsible AI standards at this stage. ` +
-      "Remember that ethics is an ongoing practice, not a one-time pass. " +
-      "Click Notify Instructor to send your system for human approval.";
-  }
-
-  const utterance = new SpeechSynthesisUtterance(message);
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
-
-  // Don’t pick a specific voice — some browsers get weird here
-  synth.speak(utterance);
-}
 
   // -----------------------
   // EVENT LISTENERS
@@ -394,8 +405,15 @@ if (!hasTtsSupport) {
   if (ttsButton) {
     ttsButton.addEventListener("click", (e) => {
       e.preventDefault();
-      if (!currentCertData) return;
-      if (!hasTtsSupport) return;
+      console.log("🔊 TTS button clicked.");
+      if (!currentCertData) {
+        console.log("🔊 No cert data yet; cannot speak.");
+        return;
+      }
+      if (!hasTtsSupport) {
+        console.log("🔊 No TTS support; aborting.");
+        return;
+      }
       playPassMessage();
     });
   }
@@ -403,8 +421,7 @@ if (!hasTtsSupport) {
   // Some browsers load voices asynchronously
   if (hasTtsSupport) {
     window.speechSynthesis.onvoiceschanged = function () {
-      // Voices are now loaded; we don't need to do anything explicit here,
-      // but this ensures they are ready when playPassMessage is called.
+      console.log("🔊 TTS voices loaded.");
     };
   }
 
