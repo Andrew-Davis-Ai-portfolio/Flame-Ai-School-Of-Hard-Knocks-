@@ -2,6 +2,290 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <title>Flame Division Academy — Tutor AI Instructor Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="page">
+    <!-- HEADER -->
+    <header class="fda-header">
+      <div class="fda-header-main">
+        <div class="fda-logo">
+          <span class="fda-logo-mark">FDA</span>
+          <div class="fda-logo-text">
+            <h1>Flame Division Academy</h1>
+            <p>Tutor AI — Instructor Engine for System Training</p>
+          </div>
+        </div>
+        <div class="fda-header-meta">
+          <span class="fda-tag">CLIENT-SIDE • GITHUB PAGES READY</span>
+          <span class="fda-tag gold">PROVISIONAL CERTIFICATION ONLY</span>
+        </div>
+      </div>
+      <p class="fda-motto">
+        “Flame Division Academy certifies systems, not intentions.”
+      </p>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="fda-main">
+      <!-- LEFT COLUMN: LAB CONSOLE -->
+      <section class="lab-console">
+        <h2 class="section-title">Tutor AI Lab Console</h2>
+        <p class="section-subtitle">
+          Configure your lesson, select your instructor, and submit your system for provisional evaluation.
+        </p>
+
+        <!-- INSTRUCTOR TOGGLE -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Instructor Channel</h3>
+            <p class="muted">
+              Choose which instructor leads this evaluation. You can re-run with the other channel after revisions.
+            </p>
+          </div>
+          <div class="instructor-toggle">
+            <label class="toggle-option">
+              <input type="radio" name="instructorType" value="systems" checked />
+              <div class="toggle-body">
+                <span class="toggle-title">Systems Instructor</span>
+                <span class="toggle-tag">Structural Authority</span>
+                <span class="toggle-note">“Structure without clarity is chaos.”</span>
+              </div>
+            </label>
+            <label class="toggle-option">
+              <input type="radio" name="instructorType" value="ethics" />
+              <div class="toggle-body">
+                <span class="toggle-title">Ethics Instructor</span>
+                <span class="toggle-tag">Governance Authority</span>
+                <span class="toggle-note">
+                  “Ethics approval does not remove responsibility. It confirms awareness.”
+                </span>
+              </div>
+            </label>
+          </div>
+          <div class="instructor-description" id="instructor-description">
+            Systems Instructor active. Focus: HTML/CSS/JS structure, wiring, and stability.
+          </div>
+        </div>
+
+        <!-- LESSON FORM -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Lesson Submission</h3>
+            <p class="muted">
+              Provide the details of the system you are submitting for evaluation.
+            </p>
+          </div>
+
+          <form id="lesson-form" novalidate>
+            <div class="field-row">
+              <div class="field">
+                <label for="studentName">Student Name</label>
+                <input id="studentName" type="text" autocomplete="name" placeholder="Full name" required />
+              </div>
+              <div class="field">
+                <label for="lessonName">Lesson Name</label>
+                <input id="lessonName" type="text" placeholder="Example: CAIO Demo — Tutor AI System" required />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="systemUrl">System URL</label>
+              <input
+                id="systemUrl"
+                type="url"
+                placeholder="https://your-username.github.io/your-repo/"
+                required
+              />
+              <p class="hint">
+                Use a live, public URL (GitHub Pages, static hosting, or equivalent).
+              </p>
+            </div>
+
+            <div class="field">
+              <label for="lessonDescription">System Description (3–5 sentences)</label>
+              <textarea
+                id="lessonDescription"
+                rows="4"
+                placeholder="Describe what your system does, who it serves, and how it is structured (HTML/CSS/JS, TTS, and governance layers)."
+                required
+              ></textarea>
+              <p class="hint" id="description-count">0 characters (minimum recommended: 160)</p>
+            </div>
+
+            <!-- ETHICS ACK -->
+            <div class="field ethics-ack">
+              <label>
+                <input type="checkbox" id="ethicsAck" />
+                <span>
+                  I understand that this system remains my responsibility. Flame Division Academy provides
+                  guidance and provisional evaluation only.
+                </span>
+              </label>
+              <p class="hint">
+                Ethics approval does not remove responsibility. It confirms awareness.
+              </p>
+            </div>
+
+            <!-- SELF-CHECK STATUS -->
+            <div class="self-check card-sub">
+              <div class="self-check-header">
+                <span>Self-Check Status</span>
+                <span id="selfCheckStatus" class="badge badge-soft">Not run</span>
+              </div>
+              <ul id="selfCheckList" class="self-check-list">
+                <li>HTML, CSS, and JavaScript links will be verified before evaluation.</li>
+                <li>Core features and ethics acknowledgment must be confirmed.</li>
+              </ul>
+            </div>
+
+            <!-- CONTROLS -->
+            <div class="button-row">
+              <button type="button" id="btnIntroPlay" class="btn ghost">
+                ▶ Play Orientation
+              </button>
+              <button type="button" id="btnIntroStop" class="btn ghost">
+                ⏹ Stop Voice
+              </button>
+              <div class="spacer"></div>
+              <button type="button" id="btnEvaluate" class="btn primary">
+                ⚡ Run Evaluation
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- DISCLAIMERS -->
+        <div class="card card-disclaimer">
+          <h3>Operational Disclaimers</h3>
+          <p class="muted">
+            Flame Division Academy certifies systems, not intentions. All responsibility for deployment, impact,
+            and real-world consequences remains with the student and their organization.
+          </p>
+          <p class="muted">
+            This environment issues <strong>provisional certifications only</strong>. Human instructor review is
+            required for final approval.
+          </p>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: EVALUATION + CERTIFICATE -->
+      <section class="evaluation-panel">
+        <!-- EVALUATION RESULT -->
+        <div class="card result-card">
+          <div class="card-header">
+            <h2>Evaluation Result</h2>
+            <p class="muted">
+              The active instructor will review your submission using the current configuration.
+            </p>
+          </div>
+
+          <div class="result-status-line">
+            <span id="statusBadge" class="badge badge-soft">Awaiting evaluation</span>
+            <span id="activeInstructorLabel" class="result-instructor">Instructor: Systems</span>
+          </div>
+
+          <div class="result-content">
+            <h3>Summary</h3>
+            <p id="resultSummary" class="muted">
+              No evaluation has been run yet. Configure your submission and select <strong>Run Evaluation</strong>.
+            </p>
+
+            <div class="result-meta">
+              <div class="meta-item">
+                <span class="meta-label">Student</span>
+                <span class="meta-value" id="metaStudent">—</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Lesson</span>
+                <span class="meta-value" id="metaLesson">—</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Instructor</span>
+                <span class="meta-value" id="metaInstructor">—</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Result</span>
+                <span class="meta-value" id="metaResult">—</span>
+              </div>
+            </div>
+
+            <div class="result-voice-controls">
+              <button type="button" id="btnResultPlay" class="btn ghost small">
+                ▶ Play Result Voice
+              </button>
+              <button type="button" id="btnResultStop" class="btn ghost small">
+                ⏹ Stop
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROVISIONAL CERTIFICATE -->
+        <div class="card certificate-card">
+          <div class="card-header">
+            <h2>Provisional Certificate</h2>
+            <p class="muted">
+              Generated locally after a successful evaluation. Human review is required to activate any certificate.
+            </p>
+          </div>
+
+          <div id="certificatePreview" class="certificate-preview certificate-preview-empty">
+            <p class="muted">
+              No provisional certificate has been generated yet. Run a successful evaluation to create one.
+            </p>
+          </div>
+
+          <div class="certificate-meta">
+            <div class="meta-item">
+              <span class="meta-label">Certificate URL</span>
+              <span class="meta-value small">
+                <span id="certificateUrl">—</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="certificate-controls">
+            <button type="button" id="btnNotifyInstructor" class="btn secondary" disabled>
+              📡 Notify Instructor for Human Review
+            </button>
+            <button type="button" id="btnCertVoice" class="btn ghost small">
+              ▶ Certificate Instructions
+            </button>
+          </div>
+
+          <p id="notifyMessage" class="notify-message muted">
+            After a provisional pass, you must notify an instructor to request human review. No certificate is
+            activated automatically.
+          </p>
+        </div>
+
+        <!-- ETHICS / GOVERNANCE REMINDER -->
+        <div class="card card-disclaimer">
+          <h3>Ethics & Governance Reminder</h3>
+          <p class="muted" id="disclaimerText">
+            Ethics approval does not remove responsibility. It confirms awareness.
+            Systems must remain accountable to the humans who design, deploy, and oversee them.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="fda-footer">
+      <span>Flame Division Academy — Tutor AI Instructor Engine</span>
+      <span class="dot">•</span>
+      <span>In-AI Era Training for Human Operators</span>
+    </footer>
+  </div>
+</body>
+</html><!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
   <title>Flame Division Academy — Tutor AI Lab Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:," />
