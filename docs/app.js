@@ -1,671 +1,551 @@
-// Flame Division Academy — Tutor AI Instructor Engine
-// app.js — client-side logic, evaluation, TTS, certificate generation (simplified TTS wiring)
+// Flame Division Academy — Tutor AI Dojo (Phase I)
+// app.js — Dojo wiring, Evaluation Coach logic, TTS, Cert Gate
 
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
   let appError = false;
 
-    // ------------------------------
-  // SAFARI / IN-APP BROWSER DETECTOR
-  // ------------------------------
-  function isInAppBrowser() {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
+  // ---------------------------
+  // SAFARI / ENV DETECTION
+  // ---------------------------
+  const isSafari = /^((?!chrome|android).)*safari/i.test(
+    navigator.userAgent || ""
+  );
+  console.log("🔥 Tutor AI Dojo loaded. Safari:", isSafari);
 
-    // Known in-app browser signatures
-    const blockers = [
-      "GITHUB",       // GitHub mobile app
-      "FBAN", "FBAV", // Facebook
-      "Instagram",    // IG browser
-      "Twitter",      // X browser
-      "TikTok",       // TikTok browser
-      "Snapchat",     // Snap browser
-      "Electron",     // Some wrappers
-      "ChatGPT",      // ChatGPT in-app browser
-      "Pinterest",
-      "Discord",
-      "Messenger"
-    ];
-
-    return blockers.some(b => ua.includes(b));
-  }
-
-  function isRealSafari() {
-    const ua = navigator.userAgent;
-    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
-    return isSafari;
-  }
-
-  // If not real Safari OR inside an in-app browser → warn user
-  if (isInAppBrowser() || !isRealSafari()) {
-    setTimeout(() => {
-      alert(
-        "⚠️ Audio Disabled: Your browser does not allow Text-to-Speech.\n\n" +
-        "Open this page in Safari for full instructor audio."
-      );
-    }, 600);
-  }
-
-  const hasSynth =
-  typeof window !== "undefined" && typeof window.speechSynthesis !== "undefined";
-const hasUtter =
-  typeof window !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
-
-const state = {
-  currentInstructor: "systems",
-  lastResult: null,
-  lastCertificate: null,
-  tts: {
-    synth: hasSynth ? window.speechSynthesis : null,
-    currentUtterance: null,
-    supported: hasSynth && hasUtter,
-  },
-};
-  
-  console.log("🔥 Tutor AI loaded — TTS supported:", state.tts.supported);
-
-  // Pre-load voices for Safari/iOS quirks
-  if (state.tts.synth && typeof state.tts.synth.getVoices === "function") {
-  try {
-    state.tts.synth.getVoices();
-    window.speechSynthesis.onvoiceschanged =
-      window.speechSynthesis.onvoiceschanged ||
-      function () {
-        state.tts.synth.getVoices();
-      };
-  } catch (e) {
-    console.warn("TTS voices warm-up issue:", e);
-  }
-}
-  // Element refs
-  const instructorRadios = document.querySelectorAll('input[name="instructorType"]');
-  const instructorDescription = document.getElementById("instructor-description");
-  const studentNameInput = document.getElementById("studentName");
-  const lessonNameInput = document.getElementById("lessonName");
-  const systemUrlInput = document.getElementById("systemUrl");
-  const lessonDescInput = document.getElementById("lessonDescription");
-  const descCount = document.getElementById("description-count");
-  const ethicsAck = document.getElementById("ethicsAck");
-
-  const selfCheckStatus = document.getElementById("selfCheckStatus");
-  const selfCheckList = document.getElementById("selfCheckList");
-
-  const btnIntroPlay = document.getElementById("btnIntroPlay");
-  const btnIntroStop = document.getElementById("btnIntroStop");
-  const btnEvaluate = document.getElementById("btnEvaluate");
-  const btnResultPlay = document.getElementById("btnResultPlay");
-  const btnResultStop = document.getElementById("btnResultStop");
-  const btnNotifyInstructor = document.getElementById("btnNotifyInstructor");
-  const btnCertVoice = document.getElementById("btnCertVoice");
-
-  const statusBadge = document.getElementById("statusBadge");
-  const activeInstructorLabel = document.getElementById("activeInstructorLabel");
-  const resultSummary = document.getElementById("resultSummary");
-  const metaStudent = document.getElementById("metaStudent");
-  const metaLesson = document.getElementById("metaLesson");
-  const metaInstructor = document.getElementById("metaInstructor");
-  const metaResult = document.getElementById("metaResult");
-  const certificatePreview = document.getElementById("certificatePreview");
-  const certificateUrl = document.getElementById("certificateUrl");
-  const notifyMessage = document.getElementById("notifyMessage");
-  const disclaimerText = document.getElementById("disclaimerText");
-
-  // ----------------- Helper UI -----------------
-
-  function setBadge(el, type, text) {
-    el.classList.remove("badge-soft", "badge-ok", "badge-bad");
-    if (type === "ok") el.classList.add("badge-ok");
-    else if (type === "bad") el.classList.add("badge-bad");
-    else el.classList.add("badge-soft");
-    el.textContent = text;
-  }
-
-  function stopSpeech() {
-    if (!state.tts.synth) return;
-    try {
-      state.tts.synth.cancel();
-    } catch (e) {
-      console.warn("TTS cancel error:", e);
-    }
-    state.tts.currentUtterance = null;
-  }
-
-  // SUPER-SIMPLE TTS WRAPPER (battle-tested for iOS Safari)
-  function speak(text, voiceType) {
-  if (!text) return;
-
-  // Re-check at call time in case the environment was slow to expose APIs
-  const synth = state.tts.synth || window.speechSynthesis;
-  const Utter = window.SpeechSynthesisUtterance;
-
-  if (!synth || typeof Utter === "undefined") {
-    console.warn("TTS not available in this browser/runtime.");
-    return;
-  }
-
-  stopSpeech();
-
-  const utter = new Utter(text);
-
-  // Instructor-style tuning
-  if (voiceType === "systems") {
-    utter.rate = 1.02;
-    utter.pitch = 0.92;
-  } else if (voiceType === "ethics") {
-    utter.rate = 0.96;
-    utter.pitch = 1.02;
-  } else {
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-  }
-  utter.volume = 1.0;
-
-  utter.onerror = function (event) {
-    console.error("TTS utterance error:", event.error);
+  // ---------------------------
+  // TTS CORE
+  // ---------------------------
+  const TTS = {
+    synth: "speechSynthesis" in window ? window.speechSynthesis : null,
+    supported:
+      "speechSynthesis" in window &&
+      typeof window.SpeechSynthesisUtterance !== "undefined",
+    voices: [],
   };
 
-  console.log("🔊 TTS speak call:", (text || "").slice(0, 120));
-  state.tts.currentUtterance = utter;
+  function initVoices() {
+    if (!TTS.supported || !TTS.synth) return;
 
-  try {
-    setTimeout(function () {
-      synth.speak(utter);
-    }, 0);
-  } catch (e) {
-    console.error("TTS speak error:", e);
-  }
-}
-  
-  function currentInstructorLabel() {
-    return state.currentInstructor === "systems" ? "Systems Instructor" : "Ethics Instructor";
-  }
+    function load() {
+      TTS.voices = TTS.synth.getVoices();
+      console.log("🎙 Voices available:", TTS.voices.length);
+    }
 
-  function updateInstructorUi() {
-    activeInstructorLabel.textContent =
-      "Instructor: " + (state.currentInstructor === "systems" ? "Systems" : "Ethics");
+    load();
 
-    if (state.currentInstructor === "systems") {
-      instructorDescription.textContent =
-        "Systems Instructor active. Focus: HTML/CSS/JS structure, file wiring, stability, and implementation standards. “Structure without clarity is chaos.”";
-      disclaimerText.textContent =
-        "Structural clarity is non-negotiable. The Systems Instructor evaluates how your HTML, CSS, and JavaScript cooperate to form a stable, maintainable system.";
-    } else {
-      instructorDescription.textContent =
-        "Ethics Instructor active. Focus: governance, accountability, risk framing, and responsible AI deployment. “Ethics approval does not remove responsibility. It confirms awareness.”";
-      disclaimerText.textContent =
-        "Ethics approval does not remove responsibility. It confirms awareness. The Ethics Instructor evaluates whether you understand the impact, risks, and accountability boundaries of your system.";
+    if (!TTS.voices.length) {
+      // Safari often fires this after async load
+      TTS.synth.onvoiceschanged = load;
     }
   }
 
-  function updateDescriptionCount() {
-    const len = (lessonDescInput.value || "").trim().length;
-    descCount.textContent = `${len} characters (minimum recommended: 160)`;
+  function speak(text) {
+    if (!TTS.supported || !TTS.synth || !text) {
+      console.log("🔇 TTS not available or empty text.");
+      return;
+    }
+
+    try {
+      if (TTS.synth.speaking) {
+        TTS.synth.cancel();
+      }
+
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.rate = 0.95;
+      msg.pitch = 1.0;
+
+      const voices = TTS.voices.length ? TTS.voices : TTS.synth.getVoices();
+      if (voices && voices.length) {
+        const preferred =
+          voices.find((v) =>
+            /Samantha|Female|Google US English/i.test(v.name)
+          ) || voices[0];
+        msg.voice = preferred;
+      }
+
+      TTS.synth.speak(msg);
+    } catch (err) {
+      console.warn("TTS error:", err);
+    }
   }
 
-  // ----------------- Self-check -----------------
+  // ---------------------------
+  // DOJO ROOM STATE
+  // ---------------------------
+  const DOJO_ROOMS = [
+    { id: "room1", name: "Orientation & Doctrine", unlocked: true, completed: false },
+    { id: "room2", name: "Systems Thinking",        unlocked: false, completed: false },
+    { id: "room3", name: "Ethics Under Pressure",   unlocked: false, completed: false },
+    { id: "room4", name: "Authority & Communication", unlocked: false, completed: false },
+    { id: "room5", name: "Final Defense",           unlocked: false, completed: false },
+  ];
 
-  function runSelfCheck() {
-    const issues = [];
-    const checks = [];
+  function cloneRooms() {
+    return JSON.parse(JSON.stringify(DOJO_ROOMS));
+  }
 
-    // CSS + JS linking
-    const cssLinked = !!document.querySelector('link[rel="stylesheet"][href*="style.css"]');
-    const jsLinked = !!document.querySelector('script[src*="app.js"]');
-    if (!cssLinked) issues.push("CSS file (style.css) is not linked in the HTML head.");
-    if (!jsLinked) issues.push("JavaScript file (app.js) is not linked with a <script> tag.");
-    checks.push(
-      cssLinked && jsLinked ? "CSS and JS links detected." : "CSS/JS link detection failed. Check file names and paths."
-    );
+  function loadState() {
+    const raw = localStorage.getItem("flameDojoState");
+    if (!raw) return cloneRooms();
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return cloneRooms();
+      return parsed;
+    } catch (e) {
+      console.warn("⚠️ Dojo state corrupted, resetting.");
+      return cloneRooms();
+    }
+  }
 
-    // Init
-    if (appError) {
-      issues.push("An application initialization error was detected. Check the browser console for details.");
-    } else {
-      checks.push("Core initialization completed without fatal errors.");
+  function saveState(state) {
+    localStorage.setItem("flameDojoState", JSON.stringify(state));
+  }
+
+  function completeRoom(roomId) {
+    const state = loadState();
+    const idx = state.findIndex((r) => r.id === roomId);
+    if (idx === -1) return;
+    state[idx].completed = true;
+    state[idx].unlocked = true;
+
+    const next = state[idx + 1];
+    if (next) {
+      next.unlocked = true;
     }
 
-    // TTS presence
-    if (!state.tts.supported) {
-      issues.push(
-        "Web Speech API (speechSynthesis) is not available in this environment. Instructors will not speak on this device/browser."
-      );
-    } else {
-      checks.push("Text-to-Speech engine detected. Instructors are cleared to speak after button presses.");
-    }
+    saveState(state);
+    renderDojo(roomId);
+    updateRoomSelect();
+    updateCertGate();
+  }
 
-    // Ethics ack
-    if (!ethicsAck.checked) {
-      issues.push("Ethics acknowledgment checkbox is not checked.");
-    } else {
-      checks.push("Ethics acknowledgment confirmed.");
-    }
+  // ---------------------------
+  // ROOM METADATA
+  // ---------------------------
+  const ROOM_CONFIG = {
+    room1: {
+      title: "Room 1 — Orientation & Doctrine",
+      focus:
+        "Understand the dojo laws, certification gates, and why Flame Division certifies systems — not intentions.",
+      description:
+        "You will demonstrate that you understand the purpose of this dojo: real-world pressure, human review, and no instant wins.",
+      checklist: [
+        "State your project in one sentence — no fluff.",
+        "Describe your core stack in plain language.",
+        "Name one thing that could fail and who would feel it first.",
+      ],
+      entryTTS:
+        "Welcome to Orientation and Doctrine. Here you prove you understand what this dojo is and why instant certificates are banned.",
+    },
+    room2: {
+      title: "Room 2 — Systems Thinking",
+      focus:
+        "Show that you can see your project as a system, not scattered tools.",
+      description:
+        "Name the components, data flows, and boundaries. Your explanation should let leadership visualize your system on a whiteboard.",
+      checklist: [
+        "Describe the main layers of your system.",
+        "Explain how data flows from user to result.",
+        "Name one monitoring or logging strategy you would use.",
+      ],
+      entryTTS:
+        "Room Two. Systems Thinking. If you only list tools, you fail. Show me architecture, not app icons.",
+    },
+    room3: {
+      title: "Room 3 — Ethics Under Pressure",
+      focus:
+        "Demonstrate that you understand harm, misuse, and edge cases — not just features.",
+      description:
+        "Speak to bias, abuse, and failure. Who could be harmed and what guardrails do you propose?",
+      checklist: [
+        "Describe a misuse scenario for your system.",
+        "Name who is most vulnerable if the system fails.",
+        "Explain one ethical safeguard you would implement.",
+      ],
+      entryTTS:
+        "Room Three. Ethics Under Pressure. This is where we see if you protect humans or just ship features.",
+    },
+    room4: {
+      title: "Room 4 — Authority & Communication",
+      focus:
+        "Present your system like a responsible owner speaking to leadership.",
+      description:
+        "No jargon shields. You must explain your system in simple language while taking responsibility for decisions and trade-offs.",
+      checklist: [
+        "Explain your system in simple language a non-technical leader understands.",
+        "Name one trade-off you accepted in your design.",
+        "State how you would communicate a major incident.",
+      ],
+      entryTTS:
+        "Room Four. Authority and Communication. Speak like an owner, not a spectator.",
+    },
+    room5: {
+      title: "Room 5 — Final Defense",
+      focus:
+        "Defend your build as if your certification depends on it — because it does.",
+      description:
+        "Summarize your system, its strengths, its weaknesses, and how you will evolve it. This is your final verbal defense before human review.",
+      checklist: [
+        "Summarize your entire system in three sentences or less.",
+        "Name the biggest single point of failure you see now.",
+        "Explain your next evolution step once this version is stable.",
+      ],
+      entryTTS:
+        "Final Defense. Room Five. This is where you stop sounding like a student and start sounding like an operator.",
+    },
+  };
 
-    selfCheckList.innerHTML = "";
-    const allOk = issues.length === 0;
-    const entries = allOk ? checks : [...checks, ...issues];
+  // ---------------------------
+  // RENDER: DOJO MODAL & SELECT
+  // ---------------------------
+  function renderDojo(activeRoomId) {
+    const state = loadState();
+    const list = document.getElementById("dojo-rooms");
+    if (!list) return;
 
-    entries.forEach((msg) => {
+    list.innerHTML = "";
+
+    state.forEach((room) => {
       const li = document.createElement("li");
-      li.textContent = msg;
-      if (issues.includes(msg)) li.style.color = "#ffb0c1";
-      selfCheckList.appendChild(li);
+      const statusIcon = room.completed
+        ? "✅"
+        : room.unlocked
+        ? "🟡"
+        : "🔒";
+
+      li.classList.toggle("dojo-locked", !room.unlocked);
+      li.classList.toggle("dojo-active", room.id === activeRoomId);
+
+      li.innerHTML = `
+        <span>${statusIcon}</span>
+        <span class="dojo-room-name">${room.name}</span>
+      `;
+
+      list.appendChild(li);
     });
-
-    if (allOk) setBadge(selfCheckStatus, "ok", "Self-check passed");
-    else setBadge(selfCheckStatus, "bad", "Self-check failed");
-
-    return allOk;
   }
 
-  // ----------------- Eval Logic -----------------
+  function updateRoomSelect() {
+    const select = document.getElementById("room-select");
+    if (!select) return;
 
-  function collectFormData() {
-    const student = (studentNameInput.value || "").trim();
-    const lesson = (lessonNameInput.value || "").trim();
-    const url = (systemUrlInput.value || "").trim();
-    const desc = (lessonDescInput.value || "").trim();
-    const ethics = !!ethicsAck.checked;
-    return { student, lesson, url, desc, ethics };
+    const state = loadState();
+    const currentId = document.body.dataset.currentRoomId || "room1";
+    select.innerHTML = "";
+
+    state.forEach((room) => {
+      const opt = document.createElement("option");
+      opt.value = room.id;
+      opt.textContent = room.name + (room.completed ? " — ✅" : room.unlocked ? "" : " — 🔒");
+      opt.disabled = !room.unlocked;
+      if (room.id === currentId) opt.selected = true;
+      select.appendChild(opt);
+    });
   }
 
-  function validateForm(data) {
-    const errors = [];
-    if (!data.student) errors.push("Student name is required.");
-    if (!data.lesson) errors.push("Lesson name is required.");
-    if (!data.url) errors.push("System URL is required.");
-    if (!data.desc) errors.push("System description is required.");
-    if (!data.ethics) errors.push("Ethics acknowledgment is required.");
-    return errors;
-  }
+  // ---------------------------
+  // CURRENT ROOM HANDLING
+  // ---------------------------
+  function setCurrentRoom(roomId) {
+    const config = ROOM_CONFIG[roomId];
+    if (!config) return;
 
-  function scoreSubmission(data) {
-    let score = 0;
+    document.body.dataset.currentRoomId = roomId;
 
-    if (data.student) score += 1;
-    if (data.lesson) score += 1;
-    if (data.url.startsWith("https://")) score += 2;
-    else if (data.url.startsWith("http://")) score += 1;
+    const titleEl = document.getElementById("room-title");
+    const focusEl = document.getElementById("room-focus");
+    const descEl = document.getElementById("room-description");
+    const checklistEl = document.getElementById("room-checklist");
 
-    const len = data.desc.length;
-    if (len >= 160 && len <= 1000) score += 3;
-    else if (len >= 100) score += 2;
-    else if (len >= 60) score += 1;
+    if (titleEl) titleEl.textContent = config.title;
+    if (focusEl) focusEl.textContent = config.focus;
+    if (descEl) descEl.textContent = config.description;
 
-    if (data.ethics) score += 2;
-
-    if (state.currentInstructor === "systems") {
-      const lower = data.desc.toLowerCase();
-      ["html", "css", "javascript", "js", "tts", "speech", "structure", "wiring"].forEach((token) => {
-        if (lower.includes(token)) score += 0.5;
+    if (checklistEl) {
+      checklistEl.innerHTML = "";
+      config.checklist.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = "• " + item;
+        checklistEl.appendChild(li);
       });
-    } else {
-      const lower = data.desc.toLowerCase();
-      ["ethics", "privacy", "responsible", "governance", "risk", "accountability", "alignment", "safety"].forEach(
-        (token) => {
-          if (lower.includes(token)) score += 0.5;
-        }
-      );
     }
 
-    return score;
+    renderDojo(roomId);
+    updateRoomSelect();
   }
 
-  function decideResult(score) {
-    return score >= 7 ? "pass" : "fail";
-  }
-
-  function generateCertificate(data, instructorType) {
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10);
-    const random = Math.floor(Math.random() * 9000) + 1000;
-    const id = `FDA-${random}`;
-
-    const urlParams = new URLSearchParams();
-    urlParams.set("name", data.student || "");
-    urlParams.set("lesson", data.lesson || "");
-    urlParams.set("instructor", instructorType === "systems" ? "Systems" : "Ethics");
-    urlParams.set("date", date);
-    urlParams.set("id", id);
-
-    const certUrl = `certificates/index.html?${urlParams.toString()}`;
-
-    return {
-      student: data.student,
-      lesson: data.lesson,
-      instructor: instructorType === "systems" ? "Systems Instructor" : "Ethics Instructor",
-      date,
-      id,
-      url: certUrl,
-    };
-  }
-
-  function renderCertificate(cert) {
-    certificatePreview.classList.remove("certificate-preview-empty");
-    certificatePreview.innerHTML = "";
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "certificate-inner";
-
-    const header = document.createElement("div");
-    header.className = "certificate-header";
-
-    const title = document.createElement("div");
-    title.className = "certificate-header-title";
-    title.textContent = "PROVISIONAL CERTIFICATE";
-
-    const badge = document.createElement("div");
-    badge.className = "certificate-badge";
-    badge.textContent = "PENDING HUMAN REVIEW";
-
-    header.appendChild(title);
-    header.appendChild(badge);
-
-    const body = document.createElement("div");
-    body.className = "certificate-body";
-
-    const left = document.createElement("div");
-    const intro = document.createElement("p");
-    intro.textContent =
-      "This document confirms provisional evaluation of the following system under Flame Division Academy.";
-    left.appendChild(intro);
-
-    const fields = document.createElement("div");
-    fields.className = "certificate-fields";
-
-    function fieldRow(label, value) {
-      const row = document.createElement("div");
-      const l = document.createElement("div");
-      l.className = "certificate-field-label";
-      l.textContent = label;
-      const v = document.createElement("div");
-      v.className = "certificate-field-value";
-      v.textContent = value || "—";
-      row.appendChild(l);
-      row.appendChild(v);
-      return row;
-    }
-
-    fields.appendChild(fieldRow("Student", cert.student));
-    fields.appendChild(fieldRow("Lesson", cert.lesson));
-    fields.appendChild(fieldRow("Instructor", cert.instructor));
-    fields.appendChild(fieldRow("Date", cert.date));
-    fields.appendChild(fieldRow("Certificate ID", cert.id));
-
-    left.appendChild(fields);
-
-    const right = document.createElement("div");
-    const p1 = document.createElement("p");
-    p1.textContent =
-      "Status: Provisional. This certificate has not been activated. Human instructor review is required.";
-    const p2 = document.createElement("p");
-    p2.textContent =
-      "Scope: This evaluation certifies the structure and framing of the system as presented. Real-world deployment and outcomes remain the responsibility of the student and their organization.";
-    right.appendChild(p1);
-    right.appendChild(p2);
-
-    body.appendChild(left);
-    body.appendChild(right);
-
-    const footer = document.createElement("div");
-    footer.className = "certificate-footer";
-    const f1 = document.createElement("span");
-    f1.textContent = "Flame Division Academy — Systems, not intentions.";
-    const f2 = document.createElement("span");
-    f2.textContent = "Human Review Required • No Auto-Approval";
-
-    footer.appendChild(f1);
-    footer.appendChild(f2);
-
-    wrapper.appendChild(header);
-    wrapper.appendChild(body);
-    wrapper.appendChild(footer);
-
-    certificatePreview.appendChild(wrapper);
-    certificateUrl.textContent = cert.url;
-  }
-
-  // ----------------- Run Evaluation -----------------
+  // ---------------------------
+  // EVALUATION COACH LOGIC
+  // ---------------------------
+  const roomAttemptCount = {};
 
   function runEvaluation() {
-    stopSpeech();
+    const repoUrl = document.getElementById("repo-url").value.trim();
+    const explanation = document
+      .getElementById("system-explanation")
+      .value.trim();
+    const failures = document.getElementById("failure-notes").value.trim();
 
-    const selfCheckOk = runSelfCheck();
-    if (!selfCheckOk) {
-      const msg =
-        (state.currentInstructor === "systems"
-          ? "Self-check failed. Structure and wiring must be stable before evaluation. "
-          : "Self-check failed. Governance cannot validate a system that is not structurally stable. ") +
-        "Resolve the listed issues, confirm ethics acknowledgment, and run the evaluation again.";
-      resultSummary.textContent = msg;
-      setBadge(statusBadge, "bad", "Self-check failed");
-      metaResult.textContent = "Blocked by self-check.";
-      speak(msg, state.currentInstructor);
+    const msgEl = document.getElementById("evaluation-message");
+    const statusEl = document.getElementById("evaluation-status");
+
+    if (!msgEl || !statusEl) return;
+
+    const roomId = document.body.dataset.currentRoomId || "room1";
+    roomAttemptCount[roomId] = (roomAttemptCount[roomId] || 0) + 1;
+
+    // Basic checks
+    const explanationWords = explanation.split(/\s+/).filter(Boolean).length;
+    const failuresWords = failures.split(/\s+/).filter(Boolean).length;
+
+    // Force at least one revision per room
+    if (roomAttemptCount[roomId] === 1) {
+      const text =
+        "First submission detected. By dojo law, no one passes on the first attempt. Clarify your explanation and go deeper on failure and harm.";
+      msgEl.textContent =
+        "First pass blocked by Evaluation Coach. Rewrite your explanation in simpler language and extend your failure notes.";
+      statusEl.textContent = "STATUS: REVISION REQUIRED — first attempt rejected by design.";
+      statusEl.classList.remove("ready");
+      statusEl.classList.add("revision");
+      speak(text);
       return;
     }
 
-    const data = collectFormData();
-    const errors = validateForm(data);
-    if (errors.length > 0) {
-      const msg =
-        (state.currentInstructor === "systems"
-          ? "Input validation failed. Structure without clarity is chaos. "
-          : "Input validation failed. Ethics begins with honest, complete information. ") +
-        "Resolve the following: " +
-        errors.join(" ");
+    // Real checks now
+    const missingRepo = !repoUrl.startsWith("http");
+    const tooShort = explanationWords < 40 || failuresWords < 25;
+    const lacksFailureLanguage =
+      !/fail|break|error|down|crash/i.test(failures) ||
+      !/user|customer|client|staff|team|people/i.test(failures);
 
-      resultSummary.textContent = msg;
-      setBadge(statusBadge, "bad", "Invalid input");
-      metaStudent.textContent = data.student || "—";
-      metaLesson.textContent = data.lesson || "—";
-      metaInstructor.textContent = currentInstructorLabel();
-      metaResult.textContent = "Validation errors.";
-      btnNotifyInstructor.disabled = true;
-      notifyMessage.textContent =
-        "Fix the highlighted issues and run the evaluation again before attempting to notify an instructor.";
-      state.lastResult = null;
-      state.lastCertificate = null;
-      speak(msg, state.currentInstructor);
-      return;
-    }
-
-    const score = scoreSubmission(data);
-    const result = decideResult(score);
-    state.lastResult = { data, result, score };
-
-    metaStudent.textContent = data.student;
-    metaLesson.textContent = data.lesson;
-    metaInstructor.textContent = currentInstructorLabel();
-
-    if (result === "pass") {
-      setBadge(statusBadge, "ok", "Provisionally Certified");
-      metaResult.textContent = "Provisionally Certified";
-
-      const summaryLines = [];
-      if (state.currentInstructor === "systems") {
-        summaryLines.push(
-          "Systems evaluation complete. Your structure is provisionally certified under the current configuration."
+    if (missingRepo || tooShort || lacksFailureLanguage) {
+      const reasons = [];
+      if (missingRepo)
+        reasons.push("• Repo URL must be present and start with http or https.");
+      if (tooShort)
+        reasons.push(
+          "• Your explanation and failure notes must be deeper. You are writing at least a short briefing, not a tweet."
         );
-        summaryLines.push(
-          "File wiring, description depth, and URL formatting meet the minimum structural expectations for this lab environment."
+      if (lacksFailureLanguage)
+        reasons.push(
+          "• You must clearly state what breaks first and who feels the impact."
         );
-        summaryLines.push(
-          "Remember: structure without clarity is chaos. Keep your implementation readable and stable."
-        );
-      } else {
-        summaryLines.push("Ethics evaluation complete. Your framing is provisionally cleared for awareness.");
-        summaryLines.push(
-          "You demonstrate an understanding of risk, accountability, and responsible deployment in your description."
-        );
-        summaryLines.push(
-          "Ethics approval does not remove responsibility. It confirms awareness. You remain accountable for outcomes."
-        );
-      }
-      summaryLines.push(
-        "This is a provisional certification only. Click Notify Instructor to submit your system for human review and to activate your certificate."
-      );
-      const summaryText = summaryLines.join(" ");
 
-      resultSummary.textContent = summaryText;
-
-      const cert = generateCertificate(data, state.currentInstructor);
-      state.lastCertificate = cert;
-      renderCertificate(cert);
-
-      btnNotifyInstructor.disabled = false;
-      notifyMessage.textContent =
-        "Provisional pass recorded. Notify an instructor to request human review. Until then, this certificate is not active.";
-
-      const voiceMsg =
-        (state.currentInstructor === "systems"
-          ? "Systems Instructor report. Your submission is provisionally certified. "
-          : "Ethics Instructor report. Your submission is provisionally cleared. ") +
-        "This is a provisional certification. Click Notify Instructor to submit your system for human review and to activate your certificate.";
-      speak(voiceMsg, state.currentInstructor);
-    } else {
-      setBadge(statusBadge, "bad", "Needs Revision");
-      metaResult.textContent = "Needs Revision";
-
-      const base =
-        state.currentInstructor === "systems"
-          ? "Systems evaluation complete. Your structure needs revision before provisional certification."
-          : "Ethics evaluation complete. Your framing needs revision before provisional clearance.";
-
-      const hints =
-        "Strengthen your description, verify your URL, and ensure your explanation reflects either structural clarity or ethical accountability, depending on the active instructor.";
-
-      const summaryText = `${base} Current score: ${score.toFixed(
-        1
-      )}. ${hints} Run the evaluation again after improving the system.`;
-      resultSummary.textContent = summaryText;
-
-      btnNotifyInstructor.disabled = true;
-      notifyMessage.textContent =
-        "Provisional certification was not granted. Revise your system, re-run evaluation, and only then request instructor review.";
-
-      state.lastCertificate = null;
-      certificatePreview.classList.add("certificate-preview-empty");
-      certificatePreview.innerHTML =
-        '<p class="muted">No provisional certificate is available. A pass result is required to generate one.</p>';
-      certificateUrl.textContent = "—";
+      msgEl.innerHTML =
+        "Your submission is not ready. The Evaluation Coach flags the following:<br>" +
+        reasons.join("<br>");
+      statusEl.textContent =
+        "STATUS: REVISION REQUIRED — strengthen depth, clarity, and harm analysis.";
+      statusEl.classList.remove("ready");
+      statusEl.classList.add("revision");
 
       speak(
-        base +
-          " Current evaluation score is " +
-          score.toFixed(1) +
-          ". Structure and ethics both require clarity before certification.",
-        state.currentInstructor
+        "Revision required. Slow down and describe who is hurt when your system fails, and what breaks first in real life."
       );
+      return;
     }
+
+    // Passed for this room
+    msgEl.textContent =
+      "Your explanation meets the minimum dojo threshold for this room. You may advance — human review still required for final certification.";
+    statusEl.textContent =
+      "STATUS: READY — Room cleared. Progress saved to dojo state.";
+    statusEl.classList.remove("revision");
+    statusEl.classList.add("ready");
+
+    completeRoom(roomId);
+
+    speak(
+      "Room cleared. You may advance in the dojo, but certification is still locked until all rooms are complete and a human has reviewed your work."
+    );
   }
 
-  // ----------------- Events -----------------
-
-  instructorRadios.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (!radio.checked) return;
-      state.currentInstructor = radio.value === "ethics" ? "ethics" : "systems";
-      updateInstructorUi();
+  function clearInputs() {
+    const ids = ["repo-url", "system-explanation", "failure-notes"];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
     });
-  });
 
-  lessonDescInput.addEventListener("input", updateDescriptionCount);
-
-  btnIntroPlay.addEventListener("click", () => {
-    const introLines = [];
-
-    introLines.push(
-      "Welcome to the Flame Division Academy Tutor AI Lab Console. This environment issues provisional certifications only."
-    );
-
-    if (state.currentInstructor === "systems") {
-      introLines.push(
-        "You are currently operating under the Systems Instructor channel. Focus on clean HTML, CSS, and JavaScript wiring."
-      );
-      introLines.push("Structure without clarity is chaos. Make sure your system is readable, stable, and traceable.");
-    } else {
-      introLines.push(
-        "You are currently operating under the Ethics Instructor channel. Focus on governance, accountability, and risk framing."
-      );
-      introLines.push(
-        "Ethics approval does not remove responsibility. It confirms awareness. You remain accountable for deployment."
-      );
+    const msgEl = document.getElementById("evaluation-message");
+    const statusEl = document.getElementById("evaluation-status");
+    if (msgEl && statusEl) {
+      msgEl.textContent =
+        "Inputs cleared. When you submit again, the Evaluation Coach will treat it as a fresh attempt for this room.";
+      statusEl.textContent = "STATUS: IDLE — no evaluation yet.";
+      statusEl.classList.remove("ready", "revision");
     }
-
-    introLines.push(
-      "Fill in your name, lesson, system URL, and a clear description. Confirm ethics acknowledgment. Then run the evaluation."
-    );
-    introLines.push(
-      "If you receive a provisional pass, click Notify Instructor to submit your system for human review and to activate your certificate."
-    );
-
-    speak(introLines.join(" "), state.currentInstructor);
-  });
-
-  btnIntroStop.addEventListener("click", stopSpeech);
-  btnEvaluate.addEventListener("click", runEvaluation);
-
-  btnResultPlay.addEventListener("click", () => {
-    if (!state.lastResult) {
-      const msg =
-        "No evaluation has been recorded yet. Configure your submission carefully and then select Run Evaluation.";
-      speak(msg, state.currentInstructor);
-      return;
-    }
-    speak(resultSummary.textContent || "", state.currentInstructor);
-  });
-
-  btnResultStop.addEventListener("click", stopSpeech);
-
-  btnNotifyInstructor.addEventListener("click", () => {
-    if (!state.lastResult || !state.lastCertificate || state.lastResult.result !== "pass") {
-      const msg =
-        "There is no active provisional certificate to submit. Achieve a pass result before notifying an instructor.";
-      speak(msg, state.currentInstructor);
-      notifyMessage.textContent = msg;
-      return;
-    }
-
-    btnNotifyInstructor.disabled = true;
-
-    const msg =
-      "This is a provisional certification. Your instructor has been notified in principle. Human review is required to activate this certificate. Ethics approval does not remove responsibility. It confirms awareness.";
-    notifyMessage.textContent =
-      "Notification recorded locally. Share your system URL and the generated certificate I D with your instructor for live human review.";
-    speak(msg, state.currentInstructor);
-  });
-
-  btnCertVoice.addEventListener("click", () => {
-    if (!state.lastCertificate) {
-      const msg =
-        "No certificate has been generated yet. Once you achieve a provisional pass, a certificate will appear here along with its tracking I D and URL parameters.";
-      speak(msg, state.currentInstructor);
-      return;
-    }
-
-    const cert = state.lastCertificate;
-    const text =
-      "Certificate briefing. Student: " +
-      cert.student +
-      ". Lesson: " +
-      cert.lesson +
-      ". Instructor channel: " +
-      cert.instructor +
-      ". Date: " +
-      cert.date +
-      ". Certificate I D: " +
-      cert.id +
-      ". This document is provisional only. To request activation, you must contact a human instructor with your system URL and certificate I D for review.";
-    speak(text, state.currentInstructor);
-  });
-
-  // ----------------- Init -----------------
-
-  try {
-    updateInstructorUi();
-    updateDescriptionCount();
-    setBadge(selfCheckStatus, "soft", "Not run");
-    setBadge(statusBadge, "soft", "Awaiting evaluation");
-    window.__fdaAppReady = true;
-  } catch (e) {
-    console.error("Tutor AI app initialization error:", e);
-    appError = true;
   }
-});
+
+  // ---------------------------
+  // CERT GATE
+  // ---------------------------
+  function allRoomsComplete(state) {
+    return state.every((r) => r.completed);
+  }
+
+  function updateCertGate() {
+    const state = loadState();
+    const certBtn = document.getElementById("cert-btn");
+    const certHint = document.getElementById("cert-hint");
+    if (!certBtn || !certHint) return;
+
+    if (allRoomsComplete(state)) {
+      certBtn.style.display = "inline-flex";
+      certHint.textContent =
+        "All rooms cleared. You may now request human review for provisional certification.";
+    } else {
+      certBtn.style.display = "none";
+      certHint.textContent =
+        "Certification locked. Clear every room in the dojo to unlock review.";
+    }
+  }
+
+  function generateCertSummary() {
+    const state = loadState();
+    const summaryBox = document.getElementById("cert-summary");
+    if (!summaryBox) return;
+
+    const currentRoom = document.body.dataset.currentRoomId || "room1";
+
+    const summary = [
+      "FLAME DIVISION DOJO — CERTIFICATION REVIEW REQUEST",
+      "",
+      "Rooms cleared:",
+      ...state.map(
+        (r, idx) =>
+          `${idx + 1}. ${r.name} — completed: ${
+            r.completed ? "YES" : "NO"
+          }`
+      ),
+      "",
+      "Primary GitHub repo link:",
+      "[PASTE YOUR PRODUCTION REPO LINK HERE]",
+      "",
+      "My system in one paragraph (plain language):",
+      "[Summarize your system here. No jargon. Assume leadership is reading.]",
+      "",
+      "Biggest failure mode I see and how I would respond:",
+      "[Describe the most realistic failure mode and your response plan.]",
+      "",
+      "Most challenging dojo room for me:",
+      `${ROOM_CONFIG[currentRoom]?.title || "N/A"} — [Explain why]`,
+    ].join("\n");
+
+    summaryBox.value = summary;
+
+    speak(
+      "All rooms cleared. Copy this summary and send it to your instructor for human review. The dojo recommends; a human confirms."
+    );
+  }
+
+  // ---------------------------
+  // BIND UI EVENTS
+  // ---------------------------
+  document.addEventListener("DOMContentLoaded", function () {
+    try {
+      initVoices();
+
+      // Set initial room based on saved unlocks
+      const state = loadState();
+      const firstUnlocked =
+        state.find((r) => r.unlocked && !r.completed) ||
+        state.find((r) => r.unlocked) ||
+        state[0];
+
+      const startingRoomId = firstUnlocked ? firstUnlocked.id : "room1";
+      setCurrentRoom(startingRoomId);
+
+      // Room select
+      updateRoomSelect();
+      const roomSelect = document.getElementById("room-select");
+      if (roomSelect) {
+        roomSelect.addEventListener("change", function () {
+          const selectedId = this.value;
+          const state = loadState();
+          const room = state.find((r) => r.id === selectedId);
+          if (!room || !room.unlocked) {
+            speak(
+              "That room is still locked. Clear your current training first."
+            );
+            updateRoomSelect(); // re-sync
+            return;
+          }
+          setCurrentRoom(selectedId);
+          const cfg = ROOM_CONFIG[selectedId];
+          if (cfg && cfg.entryTTS) speak(cfg.entryTTS);
+        });
+      }
+
+      // Dojo gate
+      const dojoGate = document.getElementById("dojo-gate-btn");
+      const dojoModal = document.getElementById("dojo-modal");
+      const closeDojo = document.getElementById("close-dojo");
+
+      if (dojoGate && dojoModal && closeDojo) {
+        dojoGate.addEventListener("click", function () {
+          const currentId =
+            document.body.dataset.currentRoomId || "room1";
+          renderDojo(currentId);
+          dojoModal.classList.remove("hidden");
+          dojoModal.setAttribute("aria-hidden", "false");
+        });
+
+        closeDojo.addEventListener("click", function () {
+          dojoModal.classList.add("hidden");
+          dojoModal.setAttribute("aria-hidden", "true");
+        });
+      }
+
+      // Eval buttons
+      const evalBtn = document.getElementById("btn-evaluate");
+      if (evalBtn) {
+        evalBtn.addEventListener("click", runEvaluation);
+      }
+
+      const clearBtn = document.getElementById("btn-clear");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", clearInputs);
+      }
+
+      // Room intro TTS
+      const roomTTSBtn = document.getElementById("btn-room-tts");
+      if (roomTTSBtn) {
+        roomTTSBtn.addEventListener("click", function () {
+          const roomId = document.body.dataset.currentRoomId || "room1";
+          const cfg = ROOM_CONFIG[roomId];
+          if (cfg && cfg.entryTTS) speak(cfg.entryTTS);
+        });
+      }
+
+      // Instructor intros
+      const systemsIntro = document.getElementById("btn-systems-intro");
+      if (systemsIntro) {
+        systemsIntro.addEventListener("click", function () {
+          speak(
+            "Systems Instructor online. I care about structure, clarity, and reality. If you cannot name your architecture, you are not ready."
+          );
+        });
+      }
+
+      const coachIntro = document.getElementById("btn-coach-intro");
+      if (coachIntro) {
+        coachIntro.addEventListener("click", function () {
+          speak(
+            "Evaluation Coach online. I will not pass you on the first try. Expect interruptions, corrections, and reality checks."
+          );
+        });
+      }
+
+      // Cert gate
+      updateCertGate();
+      const certBtn = document.getElementById("cert-btn");
+      if (certBtn) {
+        certBtn.addEventListener("click", generateCertSummary);
+      }
+    } catch (err) {
+      appError = true;
+      console.error("App init error:", err);
+    }
+  });
+})();
