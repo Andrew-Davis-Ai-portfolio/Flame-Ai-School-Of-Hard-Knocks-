@@ -4,17 +4,22 @@
 document.addEventListener("DOMContentLoaded", function () {
   let appError = false;
 
-  const state = {
-    currentInstructor: "systems",
-    lastResult: null,
-    lastCertificate: null,
-    tts: {
-      synth: "speechSynthesis" in window ? window.speechSynthesis : null,
-      currentUtterance: null,
-      supported: "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined",
-    },
-  };
+  const hasSynth =
+  typeof window !== "undefined" && typeof window.speechSynthesis !== "undefined";
+const hasUtter =
+  typeof window !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
 
+const state = {
+  currentInstructor: "systems",
+  lastResult: null,
+  lastCertificate: null,
+  tts: {
+    synth: hasSynth ? window.speechSynthesis : null,
+    currentUtterance: null,
+    supported: hasSynth && hasUtter,
+  },
+};
+  
   console.log("🔥 Tutor AI loaded — TTS supported:", state.tts.supported);
 
   // Pre-load voices for Safari/iOS quirks
