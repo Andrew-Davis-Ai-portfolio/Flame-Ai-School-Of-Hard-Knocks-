@@ -90,46 +90,50 @@ const state = {
 
   // SUPER-SIMPLE TTS WRAPPER (battle-tested for iOS Safari)
   function speak(text, voiceType) {
-    if (!state.tts.supported) {
-      console.warn("TTS not supported by this browser/runtime.");
-      return;
-    }
-    if (!text) return;
+  if (!text) return;
 
-    stopSpeech();
+  // Re-check at call time in case the environment was slow to expose APIs
+  const synth = state.tts.synth || window.speechSynthesis;
+  const Utter = window.SpeechSynthesisUtterance;
 
-    const utter = new SpeechSynthesisUtterance(text);
-
-    // Instructor-style tuning
-    if (voiceType === "systems") {
-      utter.rate = 1.02;
-      utter.pitch = 0.92;
-    } else if (voiceType === "ethics") {
-      utter.rate = 0.96;
-      utter.pitch = 1.02;
-    } else {
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
-    }
-    utter.volume = 1.0;
-
-    utter.onerror = function (event) {
-      console.error("TTS utterance error:", event.error);
-    };
-
-    console.log("🔊 TTS speak call:", (text || "").slice(0, 120));
-    state.tts.currentUtterance = utter;
-
-    try {
-      // iOS sometimes prefers a tiny async delay
-      setTimeout(function () {
-        state.tts.synth.speak(utter);
-      }, 0);
-    } catch (e) {
-      console.error("TTS speak error:", e);
-    }
+  if (!synth || typeof Utter === "undefined") {
+    console.warn("TTS not available in this browser/runtime.");
+    return;
   }
 
+  stopSpeech();
+
+  const utter = new Utter(text);
+
+  // Instructor-style tuning
+  if (voiceType === "systems") {
+    utter.rate = 1.02;
+    utter.pitch = 0.92;
+  } else if (voiceType === "ethics") {
+    utter.rate = 0.96;
+    utter.pitch = 1.02;
+  } else {
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+  }
+  utter.volume = 1.0;
+
+  utter.onerror = function (event) {
+    console.error("TTS utterance error:", event.error);
+  };
+
+  console.log("🔊 TTS speak call:", (text || "").slice(0, 120));
+  state.tts.currentUtterance = utter;
+
+  try {
+    setTimeout(function () {
+      synth.speak(utter);
+    }, 0);
+  } catch (e) {
+    console.error("TTS speak error:", e);
+  }
+}
+  
   function currentInstructorLabel() {
     return state.currentInstructor === "systems" ? "Systems Instructor" : "Ethics Instructor";
   }
