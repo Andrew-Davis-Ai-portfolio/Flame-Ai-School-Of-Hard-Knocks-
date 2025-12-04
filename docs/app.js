@@ -23,19 +23,18 @@ const state = {
   console.log("🔥 Tutor AI loaded — TTS supported:", state.tts.supported);
 
   // Pre-load voices for Safari/iOS quirks
-  if (state.tts.synth) {
-    try {
-      state.tts.synth.getVoices();
-      window.speechSynthesis.onvoiceschanged =
-        window.speechSynthesis.onvoiceschanged ||
-        function () {
-          state.tts.synth.getVoices();
-        };
-    } catch (e) {
-      console.warn("TTS voices warm-up issue:", e);
-    }
+  if (state.tts.synth && typeof state.tts.synth.getVoices === "function") {
+  try {
+    state.tts.synth.getVoices();
+    window.speechSynthesis.onvoiceschanged =
+      window.speechSynthesis.onvoiceschanged ||
+      function () {
+        state.tts.synth.getVoices();
+      };
+  } catch (e) {
+    console.warn("TTS voices warm-up issue:", e);
   }
-
+}
   // Element refs
   const instructorRadios = document.querySelectorAll('input[name="instructorType"]');
   const instructorDescription = document.getElementById("instructor-description");
