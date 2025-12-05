@@ -26,6 +26,8 @@ If you cannot invest in your tools, this is not your dojo.
 
 👉 Full curriculum and requirements: `/docs/SYLLABUS.md`
 
+---
+
 ⚖️ Legal Notice & Responsible Use
 
 Flame AI School of Hard Knocks / Flame Division Academy
@@ -40,8 +42,6 @@ Nothing offered constitutes:
 	•	Financial advice
 	•	Psychological counseling
 	•	Professional or industry certification recognized by any regulatory body
-
-⸻
 
 2. No Employment, Licensing, or Credential Guarantee
 
