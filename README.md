@@ -9,6 +9,23 @@ FLAME ON 🔥🔥🔥
 
 ---
 
+## 🔒 Mandatory Tooling Requirement
+
+All participants must maintain **ChatGPT Plus ($19.99/month)**.
+
+This is not optional.
+
+Flame Division trains **AI operators**, not observers.  
+All simulations, assessments, and system builds assume access to advanced AI reasoning models.
+
+- No affiliation with OpenAI
+- No commissions or referrals
+- Required purely for operational parity
+
+If you cannot invest in your tools, this is not your dojo.
+
+👉 Full curriculum and requirements: `/docs/SYLLABUS.md`
+
 ⚖️ Legal Notice & Responsible Use
 
 Flame AI School of Hard Knocks / Flame Division Academy
