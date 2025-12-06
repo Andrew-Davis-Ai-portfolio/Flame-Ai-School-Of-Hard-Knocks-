@@ -304,9 +304,14 @@
     }
 
     if (current !== ACCESS_TOKEN) {
-      var target = encodeURIComponent(
-        window.location.pathname.replace(/^\//, "") + window.location.search
-      );
+      // Get ONLY the filename (e.g. dojo.html or index.html)
+      var pathParts = window.location.pathname.split("/");
+      var fileName = pathParts[pathParts.length - 1] || "index.html";
+
+      var query = window.location.search || "";
+      var target = encodeURIComponent(fileName + query);
+
+      // Send them to gate in the SAME folder
       window.location.href = "gate.html?target=" + target;
     }
   })();
