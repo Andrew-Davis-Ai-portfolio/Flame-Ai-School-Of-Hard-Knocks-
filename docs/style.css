@@ -709,3 +709,27 @@ textarea::placeholder {
     box-shadow: none;        /* optional: softer look on mobile */
   }
 }
+
+/* 🔥 FORCE CERTIFICATION GATE TO BE A NORMAL BLOCK ELEMENT */
+.cert-gate {
+  position: relative !important;
+  float: none !important;
+  clear: both !important;
+  margin: 32px auto !important;
+  display: block !important;
+  z-index: 1 !important;
+}
+
+/* 🔥 FIX THE RIGHT-SIDE COLUMN SO IT NO LONGER OVERLAPS */
+.tutor-shell,
+.training-layout,
+.room-panel,
+.console-panel {
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+/* 🔥 ENSURE THE RIGHT COLUMN DOES NOT SLIDE OVER LEFT COLUMN */
+.console-panel {
+  transform: none !important;
+}
