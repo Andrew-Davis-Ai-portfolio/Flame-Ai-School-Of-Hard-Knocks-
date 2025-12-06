@@ -1,3 +1,46 @@
+🔒 Certification & Evaluation Policy (Read First)
+
+Completion of this curriculum confirms instructional exposure and practice.
+
+Certification is NOT automatic.
+
+All certificates are granted only after instructor review upon request.
+
+This process exists to ensure:
+	•	Credentials reflect demonstrated understanding
+	•	Standards remain consistent and credible
+	•	Human authority remains in the loop
+
+Students must:
+	1.	Complete all required curriculum sections
+	2.	Submit a Certificate Review Request
+	3.	Await instructor verification and approval
+
+Certificates are issued only after this review is complete.
+
+This Academy certifies capability, not mere participation.
+
+⸻
+
+🔑 Why This Policy Exists
+
+Automation accelerates learning.
+Human verification preserves meaning.
+
+Flame Division Academy trains practitioners for real-world AI, governance, and execution — where accountability matters.
+
+⸻
+
+⚖️ Final Note
+
+Requests made before curriculum completion will not be reviewed.
+Certificates are optional, earned, and intentionally controlled.
+
+This is by design.
+
+
+---
+
 ✅ Core Course Requirement (Mandatory)
 
 All students enrolled in Flame Division Academy are required to have:
