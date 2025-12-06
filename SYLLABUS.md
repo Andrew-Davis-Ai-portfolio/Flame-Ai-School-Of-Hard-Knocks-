@@ -64,3 +64,13 @@ Viewing this syllabus does not grant access.
 Participation begins only after enrollment is confirmed.
 
 ---
+
+---
+
+### 🔒 Access Control Notice
+
+Training environments, simulations, Tutor AI systems, and certification reviews are **not accessible via public links**.
+
+Access is granted individually after verified enrollment and may be revoked if misuse, redistribution, or unauthorized sharing occurs.
+
+Flame Division Academy certifies **systems under pressure**, not curiosity.
