@@ -672,3 +672,19 @@ textarea::placeholder {
   color: rgba(173, 183, 222, 0.9);
   opacity: 0.95;
 }
+
+/* --- Fix Certification Gate layout on small screens --- */
+.cert-gate {
+  max-width: 420px;
+  margin: 20px auto 0;
+}
+
+/* On mobile: make it full-width and stacked, not floating over content */
+@media (max-width: 800px) {
+  .cert-gate {
+    position: static;        /* kill any fixed/absolute behavior */
+    max-width: 100%;         /* take full width */
+    margin: 20px 0 0 0;      /* simple top margin */
+    box-shadow: none;        /* optional: softer look on mobile */
+  }
+}
