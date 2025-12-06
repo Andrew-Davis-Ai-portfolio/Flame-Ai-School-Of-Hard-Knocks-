@@ -42,3 +42,25 @@ By enrolling, you acknowledge:
   If you can’t invest $19.99 in your tooling, you are not ready to lead AI systems.
 
   ---
+
+---
+
+## 🔐 Enrollment & Access
+
+This syllabus outlines the structure and expectations of training.
+Hands-on instruction, simulations, and evaluations are **not public**.
+
+Access to the training facility requires verified enrollment.
+
+🔗 **Official Enrollment Portal**  
+https://andrew-davis-ai-portfolio.github.io/Flame-Division-Academy-Enrollment-/
+
+Enrollment grants:
+- Access to gated instructional environments
+- Trainer-controlled simulations and evaluations
+- Progression tracking and certification review
+
+Viewing this syllabus does not grant access.
+Participation begins only after enrollment is confirmed.
+
+---
