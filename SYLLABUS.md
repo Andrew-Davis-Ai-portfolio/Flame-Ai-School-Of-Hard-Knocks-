@@ -1,88 +1,104 @@
-🔒 Certification & Evaluation Policy (Read First)
+🔐 CERTIFICATION & REVIEW PROCESS (READ FIRST)
 
-Completion of this curriculum confirms instructional exposure and practice.
+Certification within Flame Division Academy is not automatic.
 
-Certification is NOT automatic.
+Completion of course material grants eligibility for review, not instant certification.
 
-All certificates are granted only after instructor review upon request.
+How it works:
+	1.	Student completes all listed curriculum components.
+	2.	Student clicks “Notify Instructor for Review.”
+	3.	A human instructor reviews:
+	•	System structure
+	•	Reasoning clarity
+	•	Responsible AI usage
+	•	Ability to explain and defend decisions
+	4.	Certification is issued only after approval.
 
-This process exists to ensure:
-	•	Credentials reflect demonstrated understanding
-	•	Standards remain consistent and credible
-	•	Human authority remains in the loop
+This mirrors real-world governance:
 
-Students must:
-	1.	Complete all required curriculum sections
-	2.	Submit a Certificate Review Request
-	3.	Await instructor verification and approval
-
-Certificates are issued only after this review is complete.
-
-This Academy certifies capability, not mere participation.
+AI can assist. Humans decide.
 
 ⸻
 
-🔑 Why This Policy Exists
+🎓 WHY CERTIFICATION IS MANUAL
 
-Automation accelerates learning.
-Human verification preserves meaning.
+Flame Division Academy does not operate on mass-production certification.
 
-Flame Division Academy trains practitioners for real-world AI, governance, and execution — where accountability matters.
+Automatic certificates:
+	•	Devalue skill
+	•	Reward speed over understanding
+	•	Create false confidence
+
+Our model ensures:
+	•	Skill > completion
+	•	Judgment > memorization
+	•	Proof > promises
+
+This is intentional.
 
 ⸻
 
-⚖️ Final Note
+🧠 REQUIRED TOOLS & ENVIRONMENT
 
-Requests made before curriculum completion will not be reviewed.
-Certificates are optional, earned, and intentionally controlled.
+Students must have access to:
+	•	✅ ChatGPT Plus ($19.99/month)
+Used as:
+	•	AI collaborator
+	•	Prompt refinement partner
+	•	Reasoning accelerator
 
-This is by design.
+This is not optional.
 
+Why:
+Students who do not understand how to work with AI will fail in the IAIE (In-AI Era), regardless of credentials.
 
----
+⸻
 
-✅ Core Course Requirement (Mandatory)
+📌 EXPECTATIONS OF STUDENTS
 
-All students enrolled in Flame Division Academy are required to have:
+By enrolling, you agree to:
+	•	Use AI responsibly and transparently
+	•	Think in systems, not shortcuts
+	•	Accept correction without ego
+	•	Understand that completion ≠ mastery
 
-ChatGPT Plus — $19.99/month
+This program is designed to pressure-test thinking, not provide comfort.
 
-This is not an upsell and not optional.
+⸻
 
-Why this is required
+🧪 PASS / CONTINUE / FAIL OUTCOMES
 
-This academy does not teach theory-only AI.
-You are trained as a system operator, not a spectator.
+After review, students will receive one of three outcomes:
+	•	✅ CERTIFIED — Approved and recorded
+	•	⚠️ CONTINUE TRAINING — Revisions required
+	•	❌ NOT READY — Core gaps identified
 
-ChatGPT Plus provides:
-	•	✅ Stable access to advanced reasoning models
-	•	✅ Consistent performance under pressure tasks
-	•	✅ Multi-step system building support
-	•	✅ Real-time iteration, critique, and correction
-	•	✅ The same tool used throughout all Flame Division demos and curricula
+Failure is not punishment.
+It is feedback.
 
-Without it, you cannot complete the training as designed.
+⸻
 
-Important clarification
-	•	Flame Division Academy is not affiliated with OpenAI
-	•	We receive no commission, referral, or compensation
-	•	This requirement exists solely because it is the most reliable baseline tool for the skills taught
+📬 POST-ENROLLMENT INSTRUCTIONS
 
-Think of it like required equipment:
+After payment and enrollment:
+	1.	You will receive access to the Training Facility.
+	2.	Complete the syllabus in order.
+	3.	Submit for instructor review.
+	4.	Wait for confirmation.
 
-You don’t train pilots without a cockpit.
-You don’t train operators without a capable AI interface.
+Do not request certification early.
+Doing so delays review.
 
-Student Responsibility Acknowledgment
+⸻
 
-By enrolling, you acknowledge:
-	•	You are responsible for maintaining your own ChatGPT Plus subscription
-	•	Tool access is part of professional readiness
-	•	Skill development requires investment, not shortcuts
+⚖️ FINAL NOTE
 
-  ---
+Flame Division Academy mirrors real operational environments:
+	•	No auto-promotions
+	•	No instant titles
+	•	No bypassing human review
 
-  If you can’t invest $19.99 in your tooling, you are not ready to lead AI systems.
+If you complete this program and earn certification, you can build systems — not just talk about them.
 
   ---
 
