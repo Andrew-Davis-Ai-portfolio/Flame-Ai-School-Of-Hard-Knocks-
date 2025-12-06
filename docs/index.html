@@ -290,5 +290,26 @@
   </div>
 
   <script src="app.js"></script>
+
+  <script>
+  (function () {
+    const ACCESS_TOKEN = "FLAME_FDA_V1"; // must match gate.html
+    const STORAGE_KEY = "flame_fda_access";
+
+    let current;
+    try {
+      current = sessionStorage.getItem(STORAGE_KEY);
+    } catch (err) {
+      current = null;
+    }
+
+    if (current !== ACCESS_TOKEN) {
+      var target = encodeURIComponent(
+        window.location.pathname.replace(/^\//, "") + window.location.search
+      );
+      window.location.href = "gate.html?target=" + target;
+    }
+  })();
+</script>
 </body>
 </html>
