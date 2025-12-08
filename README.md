@@ -1,6 +1,71 @@
-# Flame-Ai-School-Of-Hard-Knocks-
-FLAME ON 🔥🔥🔥
+![Flame Division Academy – AI School of Hard Knocks](assets/flame-division-academy.png)
 
+> ⚠️ **Important Notice**
+>  
+> This image is symbolic and illustrative only.
+> It represents intellectual rigor, responsibility, and disciplined learning.
+>  
+> No physical danger, hazardous activity, or unsafe behavior is involved in any Flame Division Academy program.
+
+
+![Flame Division Academy – AI School of Hard Knocks](assets/flame-division-academy.png)
+
+## 🔥 Flame Division Academy — AI School of Hard Knocks
+
+This image represents the **core philosophy** of Flame Division Academy:  
+learning through **disciplined challenge, accountability, and structured reasoning**.
+
+The flame symbolizes **intellectual rigor**, not danger.
+
+---
+
+### Educational Guardrails
+
+- All training is instructor-guided and reviewed  
+- All exercises are non-physical and risk-free  
+- All tools operate locally with oversight  
+- All certifications require human verification  
+
+---
+
+### Instructional Philosophy
+
+Flame Division Academy trains **operators**, not spectators.
+
+Students are evaluated on:
+- Decision reasoning  
+- Tradeoff awareness  
+- Ethical responsibility  
+- Systems thinking  
+
+Progress is earned through **demonstration**, not time spent.
+
+---
+
+### Safety & Ethics Statement
+
+This program does **not** involve:
+- Physical challenges  
+- Hazardous materials  
+- Unsafe activities of any kind  
+
+All visuals are symbolic and used for educational storytelling only.
+
+---
+
+### Certification Standard
+
+Certification is granted only after:
+- Completion of required curriculum  
+- Instructor review of reasoning artifacts  
+- Verification of responsible system understanding  
+
+Flame Division Academy certifies **capability**, not intention.
+
+---
+
+# 🔥 Flame Division Academy  
+## AI School of Hard Knocks
 ---
 
 ## 🔒 Mandatory Tooling Requirement
