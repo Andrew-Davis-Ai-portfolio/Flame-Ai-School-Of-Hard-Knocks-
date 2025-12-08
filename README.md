@@ -7,8 +7,7 @@
 >  
 > No physical danger, hazardous activity, or unsafe behavior is involved in any Flame Division Academy program.
 
-
-![Flame Division Academy – AI School of Hard Knocks](assets/flame-division-academy.png)
+---
 
 ## 🔥 Flame Division Academy — AI School of Hard Knocks
 
