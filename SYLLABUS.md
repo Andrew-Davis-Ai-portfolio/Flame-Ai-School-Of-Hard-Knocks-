@@ -1,3 +1,25 @@
+![Flame Division Academy – AI School of Hard Knocks](assets/flame-division-academy.png)
+
+> ⚠️ **Safety & Ethics Guardrail**
+>  
+> All imagery used by Flame Division Academy is **metaphorical**.  
+>  
+> - No real flames  
+> - No physical trials  
+> - No hazardous environments  
+> - No unsafe practices  
+>  
+> All learning activities are **educational, ethical, instructor-supervised, and risk-free**.
+
+---
+
+## 🔥 Flame Division Academy — AI School of Hard Knocks
+
+This image represents the **core philosophy** of Flame Division Academy:  
+learning through **disciplined challenge, accountability, and structured reasoning**.
+
+---
+
 🔐 CERTIFICATION & REVIEW PROCESS (READ FIRST)
 
 Certification within Flame Division Academy is not automatic.
